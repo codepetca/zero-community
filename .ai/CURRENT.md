@@ -5,11 +5,17 @@
 Owner explicitly authorized creating the public `codepetca/zero-community` remote
 and connecting it to Zero on 2026-10-09. Canonical source URL:
 `https://github.com/codepetca/zero-community`; companion:
-`https://github.com/codepetca/zero`. Remote creation/push and CI verification are
-in progress. No artifact release, AI execution, license selection, maintainer
+`https://github.com/codepetca/zero`. Public remote created, origin/main tracks
+main; first pushed head d66e7cf9e8d7f27da56665fadab6e9f6fc3712b1 verified remotely.
+GitHub Actions run37936790362 passed JavaFX behavior/build checks, all25 admission
+tests and packet validation on ubuntu-24.04 with Temurin17 and a virtual display.
+No artifact release, AI execution, license selection, maintainer
 appointment or Vercel/DNS deployment is included in this authorization.
 Source catalog and local Workshop contracts are unchanged. Weekly remaining45%
 at start; coordinator handles this small coherent wiring directly, no delegation.
+History scan checked35 unique blobs across4 prior commits; no matching credential
+patterns, symlinks or private/build paths. A final source-connection evidence
+commit follows; observed CI evidence is tied to the first pushed head above.
 
 ## Previous local verification
 

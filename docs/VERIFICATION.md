@@ -1,5 +1,28 @@
 # Local proof verification — 2026-10-09
 
+## Public source remote and CI — 2026-10-09
+
+Owner authorized source publication to
+[codepetca/zero-community](https://github.com/codepetca/zero-community).
+Local `main` tracks `origin/main`. First published source-connection commit:
+`d66e7cf9e8d7f27da56665fadab6e9f6fc3712b1`.
+
+[GitHub Actions run 37936790362](https://github.com/codepetca/zero-community/actions/runs/37936790362)
+completed successfully on Ubuntu 24.04 with Temurin JDK 17. The workflow ran
+`xvfb-run -a ./mvnw -B verify`, all 25 Python admission boundary tests,
+contribution packet preparation and packet validation. This is automated Linux
+virtual-display evidence; it does not verify physical Linux/Windows input or
+native VS Code interactions. There is no publishing or AI job.
+
+Coordinator reran all 25 admission tests locally. The initial upload excluded
+generated artifacts, caches and packets. A pattern scan of 35 unique tracked
+history blobs across four prior commits found no matching credential patterns
+or private/build paths; this is a scoped check, not a universal security guarantee.
+Catalog, Java source, Maven coordinates and immutable historical fixture bytes
+were unchanged by the remote/documentation wiring.
+
+## Previous local release-cycle evidence
+
 Observed on macOS with Homebrew OpenJDK 17.0.14 and pinned JavaFX 21.0.12.
 No physical input, UI automation, remote publication or credential changes.
 

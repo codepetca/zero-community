@@ -15,6 +15,9 @@ git clone https://github.com/codepetca/zero-community.git
 
 The remote hosts source and contribution PRs. Component artifacts and catalogs
 remain local prototypes; this is not a configured public Maven repository.
+The newer Workshop integration is verified in the local Zero 0.5 work; it is
+not yet published on Zero's main branch. The source proof below can be run
+independently of that editor integration.
 
 This separate Maven library contains ordinary JavaFX components students can
 use without copying component source. Maven owns dependencies. It does not
