@@ -117,3 +117,39 @@ artifact release was created, and existing generated immutable artifacts were
 not rebuilt or replaced by this check. Java behavior was not rerun for this
 licensing/documentation change. No current remote CI, native platform or physical
 input verification, publication, credential or account changes were performed.
+
+## Local health bar alternatives — 2026-10-09
+
+Current0.1.3 source includes ordinary HealthBar unchanged plus SegmentedHealthBar,
+with same explicit health/max/clamping API. Both are experimental MIT alternatives
+in health-bars, no named maintainer. No contributor recommendation field exists;
+admission rejects contributor curation/authority fields. Source digest binds both
+classes, API docs, tests and four app examples in a13-file schema1 packet.
+
+Local checks: six native JavaFX tests pass;35admission tests and13public-release/
+acceptance boundary tests pass. Two isolated Maven builds produced byte-identical
+four flat artifacts; both declared classes, exact source, APIs and MIT notices
+were verified with no bundled Zero. Four actual Maven consumers passed (plain/
+segmented adventure/study), including damage/healing/reset and answer/retry/lock/
+second-session behavior. Receipt: .proof/local/0.1.3/checks.json; catalog and
+SOURCE.json bind sourceDigest388dd646ae188f30f91df6404f126d6857fe9f292926c658ba7418f5f3a76c34.
+Library JAR SHA256f331fb4e444b0b6dbd3af6507b8e704009a9e0e52f4ba343cb30dd43e0d08b33.
+The source state is working-tree; commit URLs identify base2f94f71 only. This is
+local proof, not committed public release evidence, human acceptance or publication.
+
+Historical0.1.0/0.1.1 install/update/revert passed six consumers in50.35s, with
+known fraction-bug rejection and differing-byte replacement refusal. Artifacts
+retain hashes560f88c6e4dc207202ad526794e2a7e0c2a4dcbdd4d0736f078eb0ccbf13bcb7
+and ecde77c90e6d01854c5aa89ad099d40ae1714675edfb9343266050d7c626c36e.
+All five historical snapshot files and plain HealthBar main source match baseHEAD.
+Evidence: .proof/receipt.json and .proof/historical-alternatives-check.txt.
+
+Zero's current Workshop passed native selection/build/check/export for both classes,
+independent Python validation of current13-file packets, extracted portable0.1.3
+native checks under a path with spaces, and actual prior0.1.2 HealthBar-only source/
+artifact runtime plus schema1 packet validation. See sibling Zero's
+component-workshop/VERIFICATION.md and .verification/alternatives/ receipts.
+
+macOS synthetic native JavaFX only. Physical input, DirectoryChooser, Windows/Linux,
+exact extension Try native launch and novice trials are unverified. No recursive
+workers, staging, commits, pushes, publication or account changes by this writer.

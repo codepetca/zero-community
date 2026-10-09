@@ -3,7 +3,7 @@
   "library": {
     "groupId": "school.zero.community",
     "artifactId": "zero-community",
-    "version": "0.1.2",
+    "version": "0.1.3",
     "javaRelease": 17,
     "javafxVersion": "21.0.12"
   },
@@ -35,7 +35,44 @@
       ],
       "status": "experimental",
       "license": "MIT",
-      "maintainer": null
+      "maintainer": null,
+      "category": "health-bars",
+      "versions": [
+        "0.1.3"
+      ]
+    },
+    {
+      "id": "segmented-health-bar",
+      "name": "SegmentedHealthBar",
+      "className": "zero.community.SegmentedHealthBar",
+      "description": "A label and integer-capacity segments for app-owned health or energy, updated explicitly.",
+      "api": [
+        "SegmentedHealthBar(int maximum)",
+        "SegmentedHealthBar(String caption, int maximum)",
+        "Node view()",
+        "void setHealth(int health)",
+        "int getHealth()",
+        "int getMaximum()"
+      ],
+      "examples": [
+        {
+          "id": "segmented-adventure",
+          "path": "examples/segmented-adventure/Main.java",
+          "description": "Damage, healing and restart with app-owned health."
+        },
+        {
+          "id": "segmented-study",
+          "path": "examples/segmented-study/Main.java",
+          "description": "A study budget with answer, retry, exhaustion and reset."
+        }
+      ],
+      "status": "experimental",
+      "license": "MIT",
+      "maintainer": null,
+      "category": "health-bars",
+      "versions": [
+        "0.1.3"
+      ]
     }
   ]
 }

@@ -168,22 +168,32 @@ class PublicTests(unittest.TestCase):
     def test_source_committed_fixed_coordinates_and_output_boundaries(self):
         revision, source, _ = release.committed_source(self.root)
         self.assertEqual(revision, self.sha)
-        self.assertEqual(source['metadata']['library']['version'], '0.1.2')
+        self.assertEqual(source['metadata']['library']['version'], '0.1.3')
         with self.assertRaisesRegex(ValueError, 'ignored'):
             release.new_output(self.root, self.root / 'dist')
-        output = self.root / '.proof/public/0.1.2'
+        output = self.root / '.proof/public/0.1.3'
         output.mkdir(parents=True)
         with self.assertRaisesRegex(ValueError, 'overwrite'):
             release.new_output(self.root, output)
 
+    def test_local_working_tree_cannot_bypass_default_public_guard(self):
+        path = self.root / "src/main/java/zero/community/SegmentedHealthBar.java"
+        path.write_bytes(path.read_bytes() + b"\n// local edit\n")
+        with self.assertRaisesRegex(ValueError, "clean committed"):
+            release.committed_source(self.root)
+        revision, source, _ = release.source_inputs(self.root, local=True)
+        self.assertEqual(revision, self.sha)
+        self.assertEqual(source["metadata"]["library"]["version"], "0.1.3")
+        self.assertIn("src/main/java/zero/community/SegmentedHealthBar.java", [f["path"] for f in source["files"]])
+
     def test_artifact_license_source_and_class_guards(self):
         work = self.root / '.proof/artifacts'
         work.mkdir(parents=True)
-        files = {'pom': work / 'zero-community-0.1.2.pom'}
+        files = {'pom': work / 'zero-community-0.1.3.pom'}
         files['pom'].write_bytes((self.root / 'pom.xml').read_bytes())
-        contents = {'jar': {'zero/community/HealthBar.class': b'class', 'META-INF/LICENSE': (self.root / 'LICENSE').read_bytes()},
-                    'sources': {'zero/community/HealthBar.java': (self.root / 'src/main/java/zero/community/HealthBar.java').read_bytes(), 'META-INF/LICENSE': (self.root / 'LICENSE').read_bytes()},
-                    'javadoc': {'zero/community/HealthBar.html': b'api', 'resources/LICENSE': (self.root / 'LICENSE').read_bytes()}}
+        contents = {'jar': {'zero/community/HealthBar.class': b'class', 'zero/community/SegmentedHealthBar.class': b'class', 'META-INF/LICENSE': (self.root / 'LICENSE').read_bytes()},
+                    'sources': {'zero/community/HealthBar.java': (self.root / 'src/main/java/zero/community/HealthBar.java').read_bytes(), 'zero/community/SegmentedHealthBar.java': (self.root / 'src/main/java/zero/community/SegmentedHealthBar.java').read_bytes(), 'META-INF/LICENSE': (self.root / 'LICENSE').read_bytes()},
+                    'javadoc': {'zero/community/HealthBar.html': b'api', 'zero/community/SegmentedHealthBar.html': b'api', 'resources/LICENSE': (self.root / 'LICENSE').read_bytes()}}
         def write():
             for kind, entries in contents.items():
                 files[kind] = work / (kind + '.jar')
