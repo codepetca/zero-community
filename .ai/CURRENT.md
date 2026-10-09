@@ -28,3 +28,12 @@ Python validation of the Java Workshop ZIP share source digest
 Offline AI bundle/response validation passed. Evidence: ignored
 `.proof/admission/verification.json` and `boundary-tests.txt`. Java/library source,
 release fixtures, release-cycle script and phase 1 artifacts were not edited.
+
+Local completion accepted with Zero component lifecycle. Independent review at
+initial1544095 found hidden-Maven-input and AI-text-drift gaps;83744d2 fixed them.
+A later packet-whitespace mismatch fixed at5f68f73; targeted independent review
+clean. Admission25 tests pass; fresh Java whitespace/property ZIP validates checked
+with digestb9b18c97433001b1900637f2e2ec7aa9da91f4a4fd781b7e05014dcbdf3048eb.
+Canonical component/source/release artifact bytes unchanged during review fixes.
+No remote configured, no public license/maintainers appointed, no CI/liveAI run,
+no publication. Workshop/portable kit/student-flow evidence lives in Zero CURRENT.
