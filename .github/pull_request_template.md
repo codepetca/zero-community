@@ -7,5 +7,5 @@ Explain the component change and who can reuse it in two different apps.
 - Contribution packet digest and independent review requested:
 
 Passing automation and AI feedback are preparation evidence. Community acceptance
-needs an independent appointed maintainer's source-bound decision. This local
-repository has no publishing workflow or configured public host.
+needs an independent appointed maintainer's source-bound decision. This source
+repository has no artifact-publishing workflow or configured public Maven host.

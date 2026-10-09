@@ -1,6 +1,19 @@
 # Current state — 2026-10-09
 
-Local component lifecycle proof; no public repository or release configured.
+## Source remote connection
+
+Owner explicitly authorized creating the public `codepetca/zero-community` remote
+and connecting it to Zero on 2026-10-09. Canonical source URL:
+`https://github.com/codepetca/zero-community`; companion:
+`https://github.com/codepetca/zero`. Remote creation/push and CI verification are
+in progress. No artifact release, AI execution, license selection, maintainer
+appointment or Vercel/DNS deployment is included in this authorization.
+Source catalog and local Workshop contracts are unchanged. Weekly remaining45%
+at start; coordinator handles this small coherent wiring directly, no delegation.
+
+## Previous local verification
+
+Local component lifecycle proof; no public artifact release configured.
 One library: `school.zero.community:zero-community:0.1.1` with ordinary
 `zero.community.HealthBar`. Java 17, JavaFX controls 21.0.12.
 Canonical source is under `src/main/java`; 0.1.0's known fractional-fill bug is

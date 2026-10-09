@@ -1,6 +1,10 @@
 # Prepare a component contribution
 
 Students own their repositories; coursework links submitted in Pika stay separate.
+Propose community changes through a fork and pull request to
+[codepetca/zero-community](https://github.com/codepetca/zero-community).
+Framework, editor and Workshop changes belong in
+[codepetca/zero](https://github.com/codepetca/zero).
 Community maintainers review component inclusion. The classroom teacher is not the
 fallback reviewer when no maintainer is available. Unreviewed contributions wait.
 
@@ -85,12 +89,13 @@ from a PR checkout, packet or contributor-controlled flag. The model cannot publ
 even when every modeled requirement passes. An authenticated service and release
 workflow are separate owner-approved work.
 
-Public reuse licensing, named maintainers and hosting remain owner decisions.
-Current `UNLICENSED` and null maintainer prevent acceptance/public distribution.
+Public reuse licensing, named maintainers and artifact hosting remain owner decisions.
+Current `UNLICENSED` and null maintainer prevent community acceptance/artifact release.
 Wrapper notices only cover upstream wrapper code. Local preparation continues
 without inventing a license or appointing anyone.
 
-The CI draft builds/tests and validates a local packet on PR/push with read-only
-repository access, no AI secrets and no publishing job. No remote/live CI execution
-is configured or observed. Native Windows/Linux input, physical-input usability
+CI builds/tests and validates a local packet on PR/push with read-only
+repository access, no AI secrets and no publishing job. Source hosting does not
+configure a public artifact service or authenticated acceptance service.
+Native Windows/Linux input, physical-input usability
 and novice/cohort adoption remain untested.
