@@ -54,10 +54,10 @@ def build_release(version):
     build = PROOF / 'builds' / version
     fresh_generated(build)
     wrapper(build)
-    pom_source = ROOT / ('releases/0.1.0/pom.xml' if version == '0.1.0' else 'pom.xml')
+    pom_source = ROOT / f'releases/{version}/pom.xml'
     pom = pom_source.read_text()
     (build / 'pom.xml').write_text(pom)
-    source = ROOT / ('releases/0.1.0/src' if version == '0.1.0' else 'src')
+    source = ROOT / f'releases/{version}/src'
     shutil.copytree(source, build / 'src')
     goals = ['clean', 'package']
     # Baseline intentionally contains the bug that the current regression rejects.
@@ -234,7 +234,10 @@ def prepare_consumer(kind, zero_root):
     wrapper(dest)
     src = dest / 'src/main/java'
     (src / 'zero').mkdir(parents=True)
-    shutil.copy2(zero_root / 'student-template/src/main/java/zero/SimpleApp.java', src / 'zero/SimpleApp.java')
+    simple_app = zero_root / 'student-template/src/main/java/zero/SimpleApp.java'
+    if not simple_app.is_file():
+        simple_app = zero_root / 'framework/src/main/java/zero/SimpleApp.java'
+    shutil.copy2(simple_app, src / 'zero/SimpleApp.java')
     shutil.copy2(ROOT / f'examples/{kind}/Main.java', src / 'Main.java')
     pom = (zero_root / 'student-template/pom.xml').read_text()
     pom = pom.replace('<app.mainClass>Main</app.mainClass>', '<app.mainClass>Main</app.mainClass>\n    <zero.community.version>0.1.0</zero.community.version>')
@@ -274,7 +277,7 @@ def main():
     parser.add_argument('--zero-root', required=True, type=Path)
     args = parser.parse_args()
     zero_root = args.zero_root.resolve()
-    assert (zero_root / 'student-template/src/main/java/zero/SimpleApp.java').is_file(), 'Supply the local Zero checkout'
+    assert any((zero_root / path).is_file() for path in ('student-template/src/main/java/zero/SimpleApp.java', 'framework/src/main/java/zero/SimpleApp.java')), 'Supply the local Zero checkout'
     started = time.monotonic()
     if PROOF.exists() and not (PROOF / '.generated-by-zero-community').exists():
         raise RuntimeError('Refusing to use an unrecognized .proof directory')
@@ -282,7 +285,7 @@ def main():
     (PROOF / '.generated-by-zero-community').write_text('Generated local release proof only.\n')
     (PROOF / 'settings.xml').write_text('<settings xmlns="http://maven.apache.org/SETTINGS/1.2.0"/>\n')
     metadata = json.loads((ROOT / 'catalog/components.json').read_text())
-    assert metadata['library']['version'] == VERSIONS[-1]
+    metadata['library']['version'] = VERSIONS[-1]  # Historical fixture catalog, never public discovery.
     assert {item['id'] for item in metadata['components'][0]['examples']} == set(CHECKS)
     consumers = {kind: prepare_consumer(kind, zero_root) for kind in CHECKS}
     baseline_build, baseline_files = build_release('0.1.0')

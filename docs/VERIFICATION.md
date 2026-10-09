@@ -1,3 +1,38 @@
+# Public release preparation — 2026-10-09
+
+Current source prepares 0.1.2, the first public MIT candidate. It remains
+experimental with a null named maintainer. Existing maintain/admin GitHub users
+may accept independent source contributions; initial owner release authorization
+does not claim that review. No publication or authenticated live contribution
+acceptance has occurred during this local implementation.
+
+Local boundary checks: 32 admission tests and 12 public-release/acceptance tests.
+Mocks cover maintain/admin vs write/unknown roles, independent author identity,
+stale/dismissed/superseded/bot reviews, pagination, CI failure/newer failure,
+head races, canonical repository mismatch, dirty source, output overwrite,
+license drift, unexpected bundled classes and historical fixtures.
+
+A disposable committed source checkout under `.proof/public-check/source` was
+used because implementation edits were uncommitted. Its public preparer passed
+two reproducible builds, all three HealthBar checks, canonical MIT bytes in
+library/source/API JARs, exact source/POM, no Zero classes, and both actual Maven
+consumer apps. The generated manifest is local with null artifact URLs. This is
+fixture evidence; after review/commit, regenerate from the actual release commit.
+
+Historical 0.1.1 POM/source/test bytes were copied before the current version and
+packaging changed. Historical proof now builds both versions from preserved
+`releases/<version>` snapshots. It supports either the old starter SimpleApp path
+or the current framework source path, copying core source only into disposable
+consumers. Old artifacts/coordinates are never replaced. CI retains read-only
+permissions and adds mocked boundaries and inspection of its already-built
+licensed artifacts; it does not run live acceptance or publication.
+
+Native physical Windows/Linux input, novice/classroom adoption and the final
+public gateway remain outside these checks. Historical proof rerun passed all six install/update/revert consumer checks in
+61.11 seconds; both library JAR hashes equal the previously preserved receipts.
+Exact byte comparison against base 7c503b3 also confirmed the new 0.1.1 POM,
+HealthBar source and test snapshots. Earlier evidence follows.
+
 # Local proof verification — 2026-10-09
 
 ## Public source remote and CI — 2026-10-09

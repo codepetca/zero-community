@@ -107,3 +107,34 @@ repository access, no AI secrets and no publishing job. Source hosting does not
 configure a public artifact service or authenticated acceptance service.
 Native Windows/Linux input, physical-input usability
 and novice/cohort adoption remain untested.
+
+## Authenticated maintainer decision
+
+Owner policy for public contributions: existing `maintain`/`admin` users of
+`codepetca/zero-community` are the allowed acceptors. Use the normal fork and source
+PR workflow above. Uploading a Workshop packet is preparation; a source PR lets
+GitHub's read-only checks build and inspect the proposed source. Passing checks,
+a contributor's authored status and AI feedback never accept it.
+
+The maintained `scripts/check-github-acceptance.py` is an owner-side read-only
+bridge to GitHub's authenticated reviews and repository roles. Run the helper
+from trusted maintained source, pointing `--root` at a clean candidate checkout
+and `--pull-request` at its canonical PR number. It fetches all review pages,
+uses the effective decision for each reviewer, and requires an independent
+`APPROVED` review on the exact current head. `role_name` must be `maintain` or
+`admin`; the legacy `permission: write` is insufficient. The reviewer must be a
+User account distinct from the PR author, with matching role API identity.
+Canonical Component checks must pass for the same head and PR, and a newer failed
+or incomplete run supersedes an older success. Re-reading the head/digest catches
+candidate changes during the check. Unavailable role/review/CI evidence waits.
+A current-head effective changes request by another qualified maintainer blocks
+acceptance even when an approval exists; stale/unqualified requests are not authority.
+The owner is responsible for human review; automation must not post approvals.
+
+The helper reports `accepted` only for authenticated maintainer review plus CI;
+separate release artifact checks and an intentional owner publication are still
+required. `publishAllowed` always remains false. No flags, local JSON authority,
+AI secret, CI write permission, automatic merge or publisher are introduced.
+The earlier `acceptance_model` remains a local policy demonstration, not this
+live authenticated bridge. Initial experimental 0.1.2 publication under the
+owner's explicit authorization does not claim independent community acceptance.

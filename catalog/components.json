@@ -3,29 +3,39 @@
   "library": {
     "groupId": "school.zero.community",
     "artifactId": "zero-community",
-    "version": "0.1.1",
+    "version": "0.1.2",
     "javaRelease": 17,
     "javafxVersion": "21.0.12"
   },
-  "components": [{
-    "id": "health-bar",
-    "name": "HealthBar",
-    "className": "zero.community.HealthBar",
-    "description": "A label and progress bar for app-owned health or energy, updated explicitly.",
-    "api": [
-      "HealthBar(int maximum)",
-      "HealthBar(String caption, int maximum)",
-      "Node view()",
-      "void setHealth(int health)",
-      "int getHealth()",
-      "int getMaximum()"
-    ],
-    "examples": [
-      {"id": "adventure", "path": "examples/adventure/Main.java", "description": "Damage, healing and restart with app-owned health."},
-      {"id": "study", "path": "examples/study/Main.java", "description": "A study budget with answer, retry, exhaustion and reset."}
-    ],
-    "status": "experimental",
-    "license": "MIT",
-    "maintainer": null
-  }]
+  "components": [
+    {
+      "id": "health-bar",
+      "name": "HealthBar",
+      "className": "zero.community.HealthBar",
+      "description": "A label and progress bar for app-owned health or energy, updated explicitly.",
+      "api": [
+        "HealthBar(int maximum)",
+        "HealthBar(String caption, int maximum)",
+        "Node view()",
+        "void setHealth(int health)",
+        "int getHealth()",
+        "int getMaximum()"
+      ],
+      "examples": [
+        {
+          "id": "adventure",
+          "path": "examples/adventure/Main.java",
+          "description": "Damage, healing and restart with app-owned health."
+        },
+        {
+          "id": "study",
+          "path": "examples/study/Main.java",
+          "description": "A study budget with answer, retry, exhaustion and reset."
+        }
+      ],
+      "status": "experimental",
+      "license": "MIT",
+      "maintainer": null
+    }
+  ]
 }
