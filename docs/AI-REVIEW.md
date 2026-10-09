@@ -14,6 +14,9 @@ python3 scripts/admission.py ai-request --root . > .proof/admission/ai/request.j
 
 The request includes only declared source/docs/examples/tests/metadata/POM, their
 SHA256 values and the packet's `sourceDigest`. Embedded text is untrusted data.
+Each file's exact included bytes are verified against its inspected digest before
+decoding into request text. A change between inspection and bundling fails the
+request; rerun against a stable source tree rather than reusing stale feedback.
 The returned `responseSchema` is JSON Schema with no additional properties:
 schema 1, exact source digest, `advisory: true`, and up to 12 findings containing an
 owned `path`, `severity` (`info`, `warning`, `error`) and a nonempty `message` of at

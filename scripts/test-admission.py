@@ -8,6 +8,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from unittest.mock import patch
 import zipfile
 import admission
 
@@ -36,6 +37,10 @@ class AdmissionTests(unittest.TestCase):
         value = json.loads(path.read_text())
         edit(value)
         path.write_text(json.dumps(value))
+
+    def pom_insert(self, xml):
+        path = self.root / "pom.xml"
+        path.write_text(path.read_text().replace("</project>", xml + "</project>"))
 
     def packet(self):
         output = self.work / "packet"
@@ -168,6 +173,73 @@ class AdmissionTests(unittest.TestCase):
         response["approve"] = True
         with self.assertRaises(admission.AdmissionError):
             admission.validate_ai(response, source)
+
+    def test_unsupported_maven_profiles_rejected_without_activation(self):
+        original = (self.root / "pom.xml").read_text()
+        for active in ("true", "false"):
+            with self.subTest(activeByDefault=active):
+                (self.root / "pom.xml").write_text(original)
+                self.pom_insert('<profiles><profile><id>tools</id><activation><activeByDefault>' + active + '</activeByDefault></activation><dependencies><dependency><groupId>example</groupId><artifactId>tool</artifactId><version>LATEST</version></dependency></dependencies><build><plugins><plugin><artifactId>tool-plugin</artifactId><version>RELEASE</version></plugin></plugins></build></profile></profiles>')
+                with self.assertRaisesRegex(admission.AdmissionError, "profiles"):
+                    admission.inspect(self.root)
+
+    def test_unsupported_maven_parent_management_and_extensions(self):
+        original = (self.root / "pom.xml").read_text()
+        fixtures = {
+            "parent": '<parent><groupId>example</groupId><artifactId>parent</artifactId><version>1.0</version></parent>',
+            "dependencyManagement": '<dependencyManagement><dependencies><dependency><groupId>example</groupId><artifactId>tool</artifactId><version>1.0</version></dependency></dependencies></dependencyManagement>',
+            "pluginManagement": '<build><pluginManagement><plugins><plugin><artifactId>tool-plugin</artifactId><version>1.0</version></plugin></plugins></pluginManagement></build>',
+            "build extensions": '<build><extensions><extension><groupId>example</groupId><artifactId>extension</artifactId><version>1.0</version></extension></extensions></build>',
+            "plugin extensions": '<build><plugins><plugin><artifactId>extension-plugin</artifactId><version>1.0</version><extensions>true</extensions></plugin></plugins></build>',
+        }
+        for label, xml in fixtures.items():
+            with self.subTest(unsupported=label):
+                (self.root / "pom.xml").write_text(original)
+                # Insert into the existing build rather than creating duplicate builds.
+                if xml.startswith("<build>"):
+                    xml = xml[len("<build>"):-len("</build>")]
+                    path = self.root / "pom.xml"
+                    path.write_text(path.read_text().replace("</build>", xml + "</build>"))
+                else:
+                    self.pom_insert(xml)
+                with self.assertRaisesRegex(admission.AdmissionError, label):
+                    admission.inspect(self.root)
+
+    def test_nested_plugin_dependency_versions_pinned_and_recorded(self):
+        original = (self.root / "pom.xml").read_text()
+        for version in ("LATEST", "RELEASE", "1.0-SNAPSHOT", "[1.0,2.0)", "${missing}"):
+            with self.subTest(version=version):
+                xml = '<dependencies><dependency><groupId>example.tools</groupId><artifactId>compiler-helper</artifactId><version>' + version + '</version></dependency></dependencies>'
+                (self.root / "pom.xml").write_text(original.replace("</plugin>", xml + "</plugin>", 1))
+                with self.assertRaisesRegex(admission.AdmissionError, "exact pinned version"):
+                    admission.inspect(self.root)
+        xml = '<dependencies><dependency><groupId>example.tools</groupId><artifactId>compiler-helper</artifactId><version>${junit.version}</version></dependency></dependencies>'
+        (self.root / "pom.xml").write_text(original.replace("</plugin>", xml + "</plugin>", 1))
+        source = admission.inspect(self.root)
+        self.assertEqual(source["dependencies"][-1], {"groupId": "example.tools", "artifactId": "compiler-helper", "version": "5.11.4", "scope": "plugin", "plugin": {"groupId": "org.apache.maven.plugins", "artifactId": "maven-clean-plugin", "version": "3.2.0"}})
+        report = admission.validate_packet(self.packet())
+        self.assertEqual(report["sourceDigest"], source["sourceDigest"])
+
+    def test_ai_request_rejects_actual_second_read_drift(self):
+        original_read = admission.read_owned
+        reads = 0
+        def drift(root, name):
+            nonlocal reads
+            if name == "src/main/java/zero/community/HealthBar.java":
+                reads += 1
+                if reads == 2:
+                    path = root / name
+                    path.write_bytes(path.read_bytes() + b"\n// changed between inspect and bundle\n")
+            return original_read(root, name)
+        with patch.object(admission, "read_owned", side_effect=drift):
+            with self.assertRaisesRegex(admission.AdmissionError, "Source changed while preparing AI request"):
+                admission.ai_request(self.root)
+        self.assertEqual(reads, 2)
+
+    def test_ai_request_text_matches_every_declared_digest(self):
+        request = admission.ai_request(self.root)
+        for file in request["files"]:
+            self.assertEqual(admission.digest(file["text"].encode("utf-8")), file["sha256"])
 
     def test_ai_stale_digest_and_budget_rejected(self):
         source = admission.inspect(self.root)

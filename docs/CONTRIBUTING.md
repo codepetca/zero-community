@@ -9,6 +9,13 @@ the public API and errors, and demonstrate reuse in two different apps. Distinct
 source examples are a preparation check, not independent proof of usefulness.
 Maven dependencies and build plugins must have fixed versions.
 
+Schema 1 accepts a standalone POM with direct dependencies and build plugins.
+Parents, profiles (active or inactive), dependency/plugin management and build or
+plugin extensions are unsupported and fail admission. Admission inspects XML
+without executing Maven or resolving an effective POM. Explicit plugin dependencies
+must also have exact versions; their packet dependency records use `scope: plugin`
+and a `plugin` object identifying the owning plugin's coordinates and version.
+
 `catalog/components.json` is the sole source metadata authority. Its library and
 component fields supply the workshop, contribution packet and admission report.
 API documentation lives in `docs/<Component>.md`, owned component source under
