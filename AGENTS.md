@@ -5,7 +5,9 @@ This is an ordinary Java 17 / JavaFX Maven library, independent of Zero core.
 Keep explicit object updates and the API readable. One writer per component.
 Pin dependencies, preserve reproducible release fixtures, and exclude builds.
 Local implementation does not authorize pushes, publication, account changes,
-remote creation or deployment. Licensing and maintainers await owner decisions.
+remote creation or deployment. Original code is MIT licensed under root LICENSE;
+contributions use the same license. Preserve upstream wrapper notices. Maintainer
+appointments, community acceptance and artifact hosting remain gated.
 Run the relevant checks in README and `git diff --check` before handoff; report
 native/platform and physical-input gaps accurately.
 

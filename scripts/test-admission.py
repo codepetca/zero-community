@@ -70,6 +70,57 @@ class AdmissionTests(unittest.TestCase):
             self.assertNotIn(".env", archive.namelist())
         self.assertEqual(report["sourceDigest"], admission.inspect(self.root)["sourceDigest"])
 
+    def test_mit_packet_preserves_canonical_license_and_hash(self):
+        source = admission.inspect(self.root)
+        expected = (ROOT / "LICENSE").read_bytes()
+        self.assertEqual(len(source["files"]), 8)
+        self.assertIn({"path": "LICENSE", "sha256": admission.digest(expected)}, source["files"])
+        with zipfile.ZipFile(self.packet()) as archive:
+            self.assertEqual(archive.read("LICENSE"), expected)
+        self.assertEqual(admission.validate_packet(self.work / "packet/packet.zip")["sourceDigest"], source["sourceDigest"])
+
+    def test_mit_missing_license_rejected(self):
+        (self.root / "LICENSE").unlink()
+        with self.assertRaises(admission.AdmissionError):
+            admission.inspect(self.root)
+
+    def test_mit_missing_packet_license_rejected(self):
+        packet = self.packet()
+        self.mutate_zip(packet, lambda c: c.pop("LICENSE"))
+        with self.assertRaises(admission.AdmissionError):
+            admission.validate_packet(packet)
+
+    def test_mit_license_symlink_rejected(self):
+        path = self.root / "LICENSE"
+        path.unlink()
+        path.symlink_to(ROOT / "LICENSE")
+        with self.assertRaises(admission.AdmissionError):
+            admission.inspect(self.root)
+
+    def test_mit_license_drift_rejected(self):
+        source = admission.inspect(self.root)
+        receipt = self.work / "license-receipt.json"
+        receipt.write_text(json.dumps({"schema": 1, "sourceDigest": source["sourceDigest"], "checks": [], "provenance": {"generator": "fixture"}}))
+        packet = self.packet()
+        self.mutate_zip(packet, lambda c: c.update({"LICENSE": c["LICENSE"] + b"\nchanged notice\n"}))
+        with self.assertRaises(admission.AdmissionError):
+            admission.validate_packet(packet)
+        path = self.root / "LICENSE"
+        path.write_bytes(path.read_bytes() + b"\nchanged notice\n")
+        self.assertNotEqual(admission.inspect(self.root)["sourceDigest"], source["sourceDigest"])
+        with self.assertRaises(admission.AdmissionError):
+            prepare.prepare(self.root, self.work / "stale-license", receipt)
+
+    def test_historical_unlicensed_seven_file_packet_validates(self):
+        self.metadata(lambda m: m["components"][0].update(license="UNLICENSED"))
+        (self.root / "LICENSE").unlink()
+        source = admission.inspect(self.root)
+        self.assertEqual(len(source["files"]), 7)
+        packet = self.packet()
+        with zipfile.ZipFile(packet) as archive:
+            self.assertNotIn("LICENSE", archive.namelist())
+        self.assertEqual(admission.validate_packet(packet)["status"], "checked")
+
     def test_missing_docs(self):
         (self.root / "docs/HealthBar.md").unlink()
         with self.assertRaises(admission.AdmissionError):
@@ -162,9 +213,25 @@ class AdmissionTests(unittest.TestCase):
         policy["independentApprovals"][0]["sourceDigest"] = "0" * 64
         self.assertFalse(admission.acceptance_model(report, policy)["communityReviewed"])
 
-    def test_no_license_or_maintainer_never_accepted(self):
+    def test_mit_without_maintainer_never_accepted(self):
         report = admission.validate_packet(self.packet())
-        self.assertFalse(admission.acceptance_model(report, {})["communityReviewed"])
+        self.assertEqual(report["metadata"]["components"][0]["license"], "MIT")
+        self.assertNotIn("Owner-approved reuse licensing required", report["publishBlockers"])
+        modeled = admission.acceptance_model(report, {})
+        self.assertNotIn("Owner-approved reuse licensing required", modeled["blockers"])
+        self.assertIn("Appointed component maintainer required", modeled["blockers"])
+        self.assertFalse(modeled["communityReviewed"])
+        self.assertFalse(modeled["publishAllowed"])
+
+    def test_unlicensed_with_trusted_review_never_accepted(self):
+        self.metadata(lambda m: m["components"][0].update(license="UNLICENSED", maintainer="maintainer"))
+        report = admission.validate_packet(self.packet())
+        policy = {"maintainers": ["maintainer"], "reviewers": ["reviewer"], "checkRunners": ["trusted-runner"], "verifiedChecks": [{"runner": "trusted-runner", "sourceDigest": report["sourceDigest"], "passedChecks": ["build", "behavior", "reuse", "compatibility"]}], "independentApprovals": [{"reviewer": "reviewer", "author": "contributor", "decision": "approve", "kind": "human-community-review", "sourceDigest": report["sourceDigest"]}]}
+        modeled = admission.acceptance_model(report, policy)
+        self.assertEqual(modeled["blockers"], ["Owner-approved reuse licensing required"])
+        self.assertIn("Owner-approved reuse licensing required", report["publishBlockers"])
+        self.assertFalse(modeled["communityReviewed"])
+        self.assertFalse(modeled["publishAllowed"])
 
     def test_ai_response_has_no_acceptance_authority(self):
         source = admission.inspect(self.root)

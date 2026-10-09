@@ -1,5 +1,18 @@
 # Current state — 2026-10-09
 
+## Current licensing decision
+
+Owner selected MIT for the community repository on 2026-10-09. Root LICENSE
+contains the canonical MIT text, copyright 2026 Codepet, for original code and
+documentation. Contributions use the same license; upstream wrapper notices
+remain separate. Current HealthBar metadata records MIT and retains experimental
+status and a null maintainer. Maintainer appointments, authenticated acceptance
+and artifact hosting remain gated. This change creates no version/artifact release;
+Maven coordinates, POM, preserved 0.1.0 and generated immutable artifacts are
+unchanged. Schema 1 MIT packets include root LICENSE as the eighth owned file,
+bound by its hash and source digest. Earlier verification sections below describe
+their historical state.
+
 ## Source remote connection
 
 Owner explicitly authorized creating the public `codepetca/zero-community` remote
@@ -56,3 +69,33 @@ with digestb9b18c97433001b1900637f2e2ec7aa9da91f4a4fd781b7e05014dcbdf3048eb.
 Canonical component/source/release artifact bytes unchanged during review fixes.
 No remote configured, no public license/maintainers appointed, no CI/liveAI run,
 no publication. Workshop/portable kit/student-flow evidence lives in Zero CURRENT.
+
+## MIT licensing verification — 2026-10-09
+
+Owner selected MIT for original community code and documentation. Root LICENSE
+matches Zero's canonical MIT text byte for byte, copyright 2026 Codepet.
+HealthBar metadata now records MIT, retaining experimental status and null
+maintainer. Contributions use the same license; upstream wrapper notices remain.
+Maintainer appointments, authenticated acceptance and artifact hosting remain gated.
+
+Local checks passed: `python3 scripts/test-admission.py` (32 tests),
+`python3 scripts/admission.py inspect --root .`,
+`python3 scripts/prepare-contribution.py --root . --output .proof/licensing-2026-10-09/packet-2`,
+`python3 scripts/admission.py validate --packet .proof/licensing-2026-10-09/packet-2/packet.zip`,
+and `git diff --check`. Generated evidence is ignored under
+`.proof/licensing-2026-10-09/`. Packet status is `checked`; `communityReviewed`
+and `publishAllowed` are false. Regression tests verify MIT with null maintainer
+remains unaccepted and UNLICENSED with otherwise trusted review remains blocked.
+
+Metadata SHA256: `8681d61c115fe81b8b25b6702427f819d0fbcf10da182304cedb87f87424a036`.
+Source digest: `5f457df0b1c38f7bd4ad6c2584ef82fa3d40878e215e3fbc463e697f7bcbb517`.
+The metadata change invalidates previous source-bound packet/review receipts.
+Schema 1 requires root LICENSE whenever any component records MIT, making the
+current packet eight owned files. The exact notice bytes and SHA256 participate
+in the source digest; missing or symlinked notices and packet/receipt drift are
+rejected. Historical UNLICENSED seven-file packets still validate. Current MIT
+packets preserve the canonical notice byte for byte. No Java/POM or preserved 0.1.0 source changed, no version or
+artifact release was created, and existing generated immutable artifacts were
+not rebuilt or replaced by this check. Java behavior was not rerun for this
+licensing/documentation change. No current remote CI, native platform or physical
+input verification, publication, credential or account changes were performed.

@@ -24,8 +24,11 @@ and a `plugin` object identifying the owning plugin's coordinates and version.
 component fields supply the workshop, contribution packet and admission report.
 API documentation lives in `docs/<Component>.md`, owned component source under
 `src/main/java/zero/community`, tests under the corresponding test package, and
-examples at `examples/<app-id>/Main.java`. The first packet has seven owned files:
-the POM, metadata, HealthBar source/test/API and the adventure/study apps.
+examples at `examples/<app-id>/Main.java`. The current MIT packet has eight owned
+files: root LICENSE, the POM, metadata, HealthBar source/test/API and the
+adventure/study apps. Schema 1 requires root LICENSE whenever any component
+records MIT; its bytes and hash participate in the source digest. Existing
+UNLICENSED seven-file packets still validate, without acquiring reuse permission.
 
 Run the existing Java checks first, then the maintainer preparation checks:
 
@@ -89,10 +92,15 @@ from a PR checkout, packet or contributor-controlled flag. The model cannot publ
 even when every modeled requirement passes. An authenticated service and release
 workflow are separate owner-approved work.
 
-Public reuse licensing, named maintainers and artifact hosting remain owner decisions.
-Current `UNLICENSED` and null maintainer prevent community acceptance/artifact release.
-Wrapper notices only cover upstream wrapper code. Local preparation continues
-without inventing a license or appointing anyone.
+Original code and documentation are licensed under the [MIT License](../LICENSE),
+copyright 2026 Codepet, by owner decision on 2026-10-09. Contributions use the
+same MIT license. Reuse must retain the copyright and permission notice in copies
+or substantial portions. Preserve upstream notices under `.mvn/wrapper`, which
+cover wrapper code separately. Current HealthBar metadata records `MIT`, remains
+`experimental` and has a null maintainer. Named maintainers, authenticated
+community acceptance and artifact hosting remain gated; MIT reuse permission
+does not appoint a maintainer or approve a component. This change does not replace
+existing immutable Maven artifacts or create a version/release.
 
 CI builds/tests and validates a local packet on PR/push with read-only
 repository access, no AI secrets and no publishing job. Source hosting does not

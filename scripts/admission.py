@@ -76,6 +76,8 @@ def declarations(metadata):
     for component in components:
         if not isinstance(component, dict):
             raise AdmissionError("Component must be an object")
+        if component.get("license") == "MIT":
+            paths.add("LICENSE")
         name = component.get("name", "")
         if not re.fullmatch(r"[A-Z][A-Za-z0-9]*", name):
             raise AdmissionError("Invalid component name")
@@ -247,7 +249,7 @@ def validate_packet(path):
         status = "changes-required" if any(check["status"] == "failed" for check in receipt["checks"]) else "checked"
         return {"schema": 1, "sourceDigest": source_digest, "status": status, "scope": "automated structural checks; contributor behavior receipts are claims", "metadata": metadata,
                 "contributorChecks": receipt, "communityReviewed": False, "publishAllowed": False,
-                "publishBlockers": ["Public licensing and maintainer appointments await owner decisions", "No source-bound independent trusted maintainer approval", "Publishing is not configured"]}
+                "publishBlockers": (["Owner-approved reuse licensing required"] if any(not c.get("license") or c["license"] == "UNLICENSED" for c in metadata["components"]) else []) + ["Maintainer appointments and authenticated acceptance remain gated", "No source-bound independent trusted maintainer approval", "Publishing is not configured"]}
 
 
 def acceptance_model(report, trusted_policy):
