@@ -92,10 +92,10 @@ publishing or AI credentials. It builds/tests with virtual-display JavaFX and
 validates a local contribution packet; passing it does not approve a component.
 See the verification record for observed runs and platform limitations.
 
-## Prepare the first public release
+## Prepare a public release
 
 Keep 0.1.0 and 0.1.1 as historical local fixtures; their source/POM snapshots and
-artifact bytes are preserved. Do not publish the known faulty 0.1.0. Public 0.1.2
+artifact bytes are preserved. Do not publish the known faulty 0.1.0. The published 0.1.2 release
 keeps the fixed HealthBar API and embeds the canonical MIT notice in its library,
 source and API JARs. One public version is sufficient; later real releases enable
 public Update/Revert.
@@ -107,11 +107,12 @@ python3 scripts/test-public-release.py
 python3 scripts/prepare-public-release.py --zero-root ../zero
 ```
 
-Preparation makes a new ignored `.proof/public/0.1.2/` directory; `--output` may
+Current 0.1.3 preparation makes a new ignored `.proof/public/0.1.3/` directory; `--output` may
 choose another new directory under `.proof/`. It refuses dirty source, symlinks,
 coordinate drift and overwrite. Two clean isolated Maven builds must produce the
 same four artifacts; source/POM/license/API bytes and class contents are checked.
-Adventure and study resolve the actual JAR through Maven and exercise behavior.
+All four plain/segmented adventure and study examples resolve the actual JAR
+through Maven and exercise behavior.
 Empty Maven settings and disposable caches avoid personal Maven configuration.
 `catalog.json`, `SOURCE.json`, `checks.json`, `SHA256SUMS` and `LICENSE` accompany
 the four flat artifacts. The generated catalog records exact source commit/digest,
