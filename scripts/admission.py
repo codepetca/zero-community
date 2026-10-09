@@ -114,6 +114,9 @@ def dependencies(pom, library):
     except ET.ParseError as error:
         raise AdmissionError("Invalid POM") from error
     ns = {"m": "http://maven.apache.org/POM/4.0.0"}
+    def leaf(node, key, default=None):
+        text = node.findtext("m:" + key, default=default, namespaces=ns)
+        return text.strip() if isinstance(text, str) else text
     # Schema 1 describes this small standalone POM, not Maven's effective model.
     # Never silently omit inheritance, activation, management or extension inputs.
     unsupported = {
@@ -127,13 +130,15 @@ def dependencies(pom, library):
     for selector, label in unsupported.items():
         if project.find(selector, ns) is not None:
             raise AdmissionError("POM schema 1 does not support " + label)
-    props = {node.tag.split("}")[-1]: node.text for node in project.findall("m:properties/*", ns)}
+    props = {node.tag.split("}")[-1]: (node.text or "").strip() for node in project.findall("m:properties/*", ns)}
     for key in ("groupId", "artifactId", "version"):
-        if project.findtext("m:" + key, namespaces=ns) != str(library.get(key)):
+        if leaf(project, key) != str(library.get(key)):
             raise AdmissionError("POM and source manifest disagree: " + key)
     if props.get("maven.compiler.release") != str(library.get("javaRelease")) or props.get("javafx.version") != library.get("javafxVersion"):
         raise AdmissionError("POM and source manifest disagree on Java/JavaFX")
     def resolved(value):
+        if isinstance(value, str):
+            value = value.strip()
         if value and re.fullmatch(r"\$\{[^}]+\}", value):
             value = props.get(value[2:-1])
         if not value or not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_.+-]*", value) or "SNAPSHOT" in value.upper() or value.upper() in ("LATEST", "RELEASE"):
@@ -141,16 +146,16 @@ def dependencies(pom, library):
         return value
     result = []
     for node in project.findall("m:dependencies/m:dependency", ns):
-        item = {key: node.findtext("m:" + key, namespaces=ns) for key in ("groupId", "artifactId", "version")}
+        item = {key: leaf(node, key) for key in ("groupId", "artifactId", "version")}
         item["version"] = resolved(item["version"])
-        item["scope"] = node.findtext("m:scope", default="compile", namespaces=ns)
+        item["scope"] = leaf(node, "scope", "compile")
         result.append(item)
     for node in project.findall("m:build/m:plugins/m:plugin", ns):
-        plugin = {"groupId": node.findtext("m:groupId", default="org.apache.maven.plugins", namespaces=ns),
-                  "artifactId": node.findtext("m:artifactId", namespaces=ns),
-                  "version": resolved(node.findtext("m:version", namespaces=ns))}
+        plugin = {"groupId": leaf(node, "groupId", "org.apache.maven.plugins"),
+                  "artifactId": leaf(node, "artifactId"),
+                  "version": resolved(leaf(node, "version"))}
         for dependency in node.findall("m:dependencies/m:dependency", ns):
-            item = {key: dependency.findtext("m:" + key, namespaces=ns) for key in ("groupId", "artifactId", "version")}
+            item = {key: leaf(dependency, key) for key in ("groupId", "artifactId", "version")}
             item["version"] = resolved(item["version"])
             item["scope"] = "plugin"
             item["plugin"] = plugin

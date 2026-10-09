@@ -236,6 +236,19 @@ class AdmissionTests(unittest.TestCase):
                 admission.ai_request(self.root)
         self.assertEqual(reads, 2)
 
+    def test_pom_leaf_and_property_whitespace_normalized(self):
+        path = self.root / "pom.xml"
+        original = path.read_text()
+        xml = '<dependencies><dependency><groupId> example.tools </groupId><artifactId> compiler-helper </artifactId><version> ${junit.version} </version></dependency></dependencies>'
+        text = original.replace("</plugin>", xml + "</plugin>", 1)
+        text = text.replace('<junit.version>5.11.4</junit.version>', '<junit.version>\n 5.11.4 \n</junit.version>')
+        text = text.replace('<groupId>school.zero.community</groupId>', '<groupId> school.zero.community </groupId>')
+        text = text.replace('<version>3.2.0</version>', '<version> 3.2.0 </version>')
+        path.write_text(text)
+        source = admission.inspect(self.root)
+        self.assertEqual(source["dependencies"][-1], {"groupId": "example.tools", "artifactId": "compiler-helper", "version": "5.11.4", "scope": "plugin", "plugin": {"groupId": "org.apache.maven.plugins", "artifactId": "maven-clean-plugin", "version": "3.2.0"}})
+        self.assertEqual(admission.validate_packet(self.packet())["sourceDigest"], source["sourceDigest"])
+
     def test_ai_request_text_matches_every_declared_digest(self):
         request = admission.ai_request(self.root)
         for file in request["files"]:
