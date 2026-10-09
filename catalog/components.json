@@ -25,7 +25,7 @@
       {"id": "study", "path": "examples/study/Main.java", "description": "A study budget with answer, retry, exhaustion and reset."}
     ],
     "status": "experimental",
-    "license": "UNLICENSED",
+    "license": "MIT",
     "maintainer": null
   }]
 }

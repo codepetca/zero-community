@@ -15,9 +15,9 @@ git clone https://github.com/codepetca/zero-community.git
 
 The remote hosts source and contribution PRs. Component artifacts and catalogs
 remain local prototypes; this is not a configured public Maven repository.
-The newer Workshop integration is verified in the local Zero 0.5 work; it is
-not yet published on Zero's main branch. The source proof below can be run
-independently of that editor integration.
+The Workshop integration is included in Zero's published 0.5.0 source; its
+separate component kit and Maven artifacts remain local. The source proof below
+can be run independently of that editor integration.
 
 This separate Maven library contains ordinary JavaFX components students can
 use without copying component source. Maven owns dependencies. It does not
@@ -63,11 +63,15 @@ The proof finishes with 0.1.0 selected after revert. To select the fix, change t
 consumer POM's `zero.community.version` to `0.1.1`, then rebuild. Use fixed versions;
 no latest/SNAPSHOT/ranges. Generated files, caches and artifacts stay out of Git.
 
-These are experimental local fixtures. Public reuse licensing, artifact distribution location
-and named maintainers await owner decisions; `UNLICENSED` records that absence.
-No community review or reuse permission is claimed. Wrapper notices
-under `.mvn/wrapper` cover upstream wrapper code only. Publishing this source
-repository does not publish Maven artifacts or appoint maintainers. Finite checks use synthetic
+These are experimental local fixtures. Original code and documentation are licensed
+under the [MIT License](LICENSE), copyright 2026 Codepet. Contributions use the
+same license; include the copyright and permission notice when reusing substantial
+portions. Preserve the upstream wrapper notices under `.mvn/wrapper`; those cover
+upstream wrapper code separately. Named maintainers, community acceptance and
+artifact hosting remain gated. Publishing this source repository does not publish
+Maven artifacts or appoint maintainers. Existing local release fixtures retain
+their original bytes; this licensing change creates no artifact version or release.
+Finite checks use synthetic
 JavaFX events, with no Robot, forced activation or UI automation. Physical input,
 Windows/Linux, editor/native dependency actions and novice trials are untested.
 
@@ -76,7 +80,7 @@ Local preparation and automated admission are documented in
 `python3 scripts/prepare-contribution.py --output .proof/admission/packet-1`.
 The packet has source-bound hashes, API/examples/dependencies and check receipts.
 Structural checks produce `checked`; independent community acceptance and
-distribution remain gated by owner licensing/appointments and trusted review.
+distribution remain gated by maintainer appointments, trusted review and artifact hosting.
 The [AI interface](docs/AI-REVIEW.md) is offline, budgeted and advisory.
 The PR/push CI has pinned official actions, read-only permissions and no
 publishing or AI credentials. It builds/tests with virtual-display JavaFX and
