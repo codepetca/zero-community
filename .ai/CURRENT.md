@@ -1,5 +1,45 @@
 # Current state — 2026-10-09
 
+## Public community candidate — local implementation
+
+Owner authorized the simple public component workflow, with existing canonical
+repository maintain/admin users as contribution acceptors and no new accounts,
+credentials, permissions or settings. Current library/catalog version is 0.1.2;
+HealthBar stays experimental with null named maintainer. Initial public release
+will use explicit owner authorization, without claiming independent human
+community acceptance. No publication has occurred in this implementation.
+
+Current POM records MIT and packages canonical root LICENSE into library/source
+JARs at META-INF/LICENSE and API JAR at resources/LICENSE. Preserved 0.1.0 and
+0.1.1 POM/source/test snapshots stay unchanged. Historical proof still uses real
+Maven consumers for install/update/revert, independently of the public candidate.
+
+New scripts prepare-public-release.py and test-public-release.py require clean
+committed source, fixed pinned coordinates/dependencies, two reproducible builds,
+exact source/POM/notices/API/no-Zero artifact checks and two actual consumer apps.
+Generated flat artifacts/catalog/SOURCE/checksums/LICENSE stay under ignored
+.proof/public/<version>; local catalog URLs are null until verified publication.
+The owner-side check-github-acceptance.py uses existing gh read authentication
+against canonical GitHub roles, paginated current-head effective human reviews
+and exact PR CI. It waits on missing/stale/self/bot/unavailable evidence, catches
+head races, and cannot approve/merge/publish. Run this helper from trusted owner
+source, never contributor-controlled source. CI adds boundary and artifact checks
+while retaining contents:read and no live authority/publishing job.
+
+Local evidence: 32 admission and 12 public boundary tests pass. A disposable
+committed fixture at .proof/public-check/source passed two identical builds,
+three meaningful HealthBar checks and actual adventure/study Maven consumers.
+Historical proof rerun passed all six install/update/revert checks in61.11s,
+with both library JAR hashes equal to the preserved old receipts. Snapshot0.1.1
+POM/main/test bytes match base7c503b3 exactly. Final release artifacts must be regenerated from the coordinator's eventual
+clean release commit; fixture receipts are explicitly local. macOS synthetic
+JavaFX only; physical input/Windows/Linux and public gateway not checked here.
+One community writer, requested Sol/high; effective model/token telemetry unknown.
+Weekly remaining reused at39%; DeepSeek paused. No Git commit/push/external mutation
+by this worker. Earlier records below describe their historical state.
+
+# Current state — 2026-10-09
+
 ## Current licensing decision
 
 Owner selected MIT for the community repository on 2026-10-09. Root LICENSE

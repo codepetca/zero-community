@@ -25,5 +25,8 @@ jobs:
       - name: Admission boundary checks and local packet
         run: |
           python3 scripts/test-admission.py
+          python3 scripts/test-public-release.py
           python3 scripts/prepare-contribution.py --root . --output .proof/admission/ci-packet
           python3 scripts/admission.py validate --packet .proof/admission/ci-packet/packet.zip
+      - name: Verify licensed public artifact contents
+        run: python3 scripts/prepare-public-release.py --verify-built .

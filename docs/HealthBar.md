@@ -30,3 +30,6 @@ double, so 75/100 displays 75% and 7/8 displays 87.5%. The constructors and publ
 methods stay unchanged. The release-cycle proof expects the old defect on
 install/revert and the corrected fill after update. This is a local fixture,
 not a recommendation to distribute a known faulty version.
+
+0.1.2 preserves the fixed behavior and the same explicit API, adding public MIT
+artifact packaging. Historical 0.1.0/0.1.1 fixtures remain unchanged.
