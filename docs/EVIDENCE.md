@@ -33,7 +33,7 @@ No live AI provider was used. Historical records are in
 
 Audit at main `f6460f48`:35admission tests and13mocked acceptance/release tests
 passed. Additional reproductions found no-op workflow trust, outbound JSON byte
-budget mismatch and boolean schema acceptance. Remediation passes39admission and20acceptance/release tests. Library source
+budget mismatch and boolean schema acceptance. Remediation passes39admission and25acceptance/release tests. Library source
 digest is unchanged. Independent final-source review is pending.
 
 ## GitHub main protection — 2026-10-10
@@ -47,3 +47,16 @@ Named [CODEOWNERS](../.github/CODEOWNERS) is local until its human-reviewed merg
 Readback JSON is retained locally in Zero .verification/ai-flow-hardening-2026-10-10.
 Initial API request was rejected422 with both contexts/checks; corrected checks-only
 request applied successfully. No account identity, credentials or release bytes changed.
+
+## Independent remediation review — initial wave
+
+Security/correctness reviewed Community `f6460f48..a120d2cb` and Zero rules at
+`49385146`; compatibility reviewed both complete `f8f78290..49385146` and
+`f6460f48..a120d2cb` diffs. Requested GPT-6.1-Sol/high in two fresh contexts;
+effective configuration/tokens/elapsed telemetry unknown. Both assigned scopes
+complete. Accepted two P2 corrections: final PR/review/role readback and accurate
+publisher stop/resume documentation. First correction batch passes25acceptance
+regressions (15.202seconds), retaining39admission tests and unchanged source digest.
+A targeted independent review of both correction deltas is next. Main protection
+was absent (authenticated404 `Branch not protected`, repository rulesets empty)
+before applying the stronger gate; the apply script rechecked that baseline.

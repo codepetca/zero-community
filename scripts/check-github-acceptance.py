@@ -79,6 +79,32 @@ def canonical_pr(pr, revision):
             and pr.get('head', {}).get('sha') == revision)
 
 
+def qualified_reviews(api, pull_number, revision, author):
+    reviews = pages(api, f'{BASE}/pulls/{pull_number}/reviews')
+    effective = {}
+    # GitHub returns reviews chronologically. COMMENTED/PENDING do not revoke an
+    # approval; a later decision/dismissal does. Match IDs rather than trusting
+    # claimed author_association or contributor metadata.
+    for review in sorted(reviews, key=lambda r: r['id']):
+        login = review.get('user', {}).get('login', '')
+        if review.get('state') in ('APPROVED', 'CHANGES_REQUESTED', 'DISMISSED'):
+            effective[login.lower()] = review
+    approvals = []
+    blocking_reviews = []
+    for login, review in effective.items():
+        if not re.fullmatch(r'[a-z0-9][a-z0-9-]{0,38}', login) or login == author or review.get('user', {}).get('type') != 'User':
+            continue
+        if review.get('state') not in ('APPROVED', 'CHANGES_REQUESTED') or review.get('commit_id') != revision or not review.get('submitted_at'):
+            continue
+        permission = api(f'{BASE}/collaborators/{login}/permission')
+        if permission.get('role_name') in ('maintain', 'admin') and permission.get('user', {}).get('id') == review['user'].get('id') and permission.get('user', {}).get('login', '').lower() == login:
+            decisions = approvals if review['state'] == 'APPROVED' else blocking_reviews
+            decisions.append({'reviewId': review['id'], 'reviewer': login, 'reviewerId': review['user']['id'],
+                              'role': permission['role_name'], 'sourceRevision': revision,
+                              'url': f'https://github.com/{REPOSITORY}/pull/{pull_number}#pullrequestreview-{review["id"]}'})
+    return approvals, blocking_reviews
+
+
 def check(root, pull_number, api=gh_api, trusted_root=ROOT):
     root = Path(root).resolve()
     trusted_root = Path(trusted_root).resolve()
@@ -110,32 +136,7 @@ def check(root, pull_number, api=gh_api, trusted_root=ROOT):
     author = pr.get('user', {}).get('login', '').lower()
     if not author:
         raise ValueError('PR author identity missing')
-    reviews = pages(api, f'{BASE}/pulls/{pull_number}/reviews')
-    effective = {}
-    # GitHub returns reviews chronologically. COMMENTED/PENDING do not revoke an
-    # approval; a later decision/dismissal does. Match IDs rather than trusting
-    # claimed author_association or contributor metadata.
-    for review in sorted(reviews, key=lambda r: r['id']):
-        login = review.get('user', {}).get('login', '')
-        if review.get('state') in ('APPROVED', 'CHANGES_REQUESTED', 'DISMISSED'):
-            effective[login.lower()] = review
-    approvals = []
-    blocking_reviews = []
-    for login, review in effective.items():
-        if not re.fullmatch(r'[a-z0-9][a-z0-9-]{0,38}', login) or login == author or review.get('user', {}).get('type') != 'User':
-            continue
-        if review.get('state') not in ('APPROVED', 'CHANGES_REQUESTED') or review.get('commit_id') != revision or not review.get('submitted_at'):
-            continue
-        permission = api(f'{BASE}/collaborators/{login}/permission')
-        if permission.get('role_name') in ('maintain', 'admin') and permission.get('user', {}).get('id') == review['user'].get('id') and permission.get('user', {}).get('login', '').lower() == login:
-            decisions = approvals if review['state'] == 'APPROVED' else blocking_reviews
-            decisions.append({'reviewId': review['id'], 'reviewer': login, 'reviewerId': review['user']['id'],
-                              'role': permission['role_name'], 'sourceRevision': revision,
-                              'url': f'https://github.com/{REPOSITORY}/pull/{pull_number}#pullrequestreview-{review["id"]}'})
-    if blocking_reviews:
-        result['blockers'].append('Current-head changes requested by an existing maintain/admin human must be resolved')
-    if not approvals:
-        result['blockers'].append('Independent current-head approval by an existing maintain/admin human required')
+    approvals, blocking_reviews = qualified_reviews(api, pull_number, revision, author)
     workflow = api(f'{BASE}/actions/workflows/checks.yml')
     if workflow.get('path') != '.github/workflows/checks.yml' or type(workflow.get('id')) is not int:
         raise ValueError('Canonical component check workflow unavailable')
@@ -145,10 +146,23 @@ def check(root, pull_number, api=gh_api, trusted_root=ROOT):
     latest = max(eligible, key=lambda r: (r['id'], r.get('run_attempt', 1)), default=None)
     if not latest or latest.get('status') != 'completed' or latest.get('conclusion') != 'success':
         result['blockers'].append('Successful current-head canonical read-only Component checks required')
+    # Refresh authority after the CI read; report these decisions, not the
+    # earlier approvals. These bounded API reads are a snapshot, not atomic.
+    approvals, blocking_reviews = qualified_reviews(api, pull_number, revision, author)
+    final_pr = api(f'{BASE}/pulls/{pull_number}')
+    if not canonical_pr(final_pr, revision) or final_pr.get('user', {}).get('login', '').lower() != author:
+        raise ValueError('Candidate changed during acceptance check')
+    if final_pr.get('draft') or final_pr.get('state') != 'open':
+        if 'Open ready-for-review PR required' not in result['blockers']:
+            result['blockers'].append('Open ready-for-review PR required')
+    if blocking_reviews:
+        result['blockers'].append('Current-head changes requested by an existing maintain/admin human must be resolved')
+    if not approvals:
+        result['blockers'].append('Independent current-head approval by an existing maintain/admin human required')
     # Reauthenticate main and both clean checkouts after authority/CI reads.
     if main_revision(api) != trusted_revision or clean_revision(trusted_root, 'trusted main') != trusted_revision or policy_tree(trusted_root) != trusted_policy:
         raise ValueError('Trusted main changed during acceptance check')
-    if not canonical_pr(api(f'{BASE}/pulls/{pull_number}'), revision) or clean_revision(root, 'candidate') != revision or policy_tree(root) != candidate_policy:
+    if clean_revision(root, 'candidate') != revision or policy_tree(root) != candidate_policy:
         raise ValueError('Candidate changed during acceptance check')
     if admission.inspect(root)['sourceDigest'] != source['sourceDigest']:
         raise ValueError('Candidate source digest changed during acceptance check')

@@ -141,8 +141,11 @@ acceptance can only follow against the resulting authenticated `main` policy.
 A PR changing this helper cannot use its own changed code to acquire acceptance,
 including the initial hardening PR. This check never executes candidate scripts.
 Re-reading canonical main, both clean checkout revisions, policy trees and the
-PR head/base/digest catches changes during the check. Unavailable role/review/CI
-evidence waits.
+PR head/base/digest catches changes during the check. After reading CI, the helper
+refreshes effective reviews and qualified role identities and checks that the PR
+is still open and ready for review. Reported decisions use this final readback.
+These bounded read-only API calls provide a snapshot, not an atomic guarantee
+against later changes. Unavailable role/review/CI evidence waits.
 A current-head effective changes request by another qualified maintainer blocks
 acceptance even when an approval exists; stale/unqualified requests are not authority.
 The owner is responsible for human review; automation must not post approvals.

@@ -177,6 +177,72 @@ class PublicTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'Candidate changed'):
             acceptance.check(self.root, 2, base_race, trusted_root=self.trusted_root)
 
+    def test_pr_draft_and_closed_during_ci_read_wait(self):
+        for change in ({'draft': True}, {'state': 'closed'}):
+            with self.subTest(change=change):
+                self.pr.update(state='open', draft=False)
+                def race(path):
+                    if '/runs?' in path:
+                        self.pr.update(change)
+                    return self.api(path)
+                result = acceptance.check(self.root, 2, race, trusted_root=self.trusted_root)
+                self.assertEqual(result['status'], 'waiting')
+                self.assertFalse(result['communityReviewed'])
+                self.assertIn('Open ready-for-review PR required', result['blockers'])
+
+    def test_dismissed_review_during_ci_read_waits_and_reports_fresh_decisions(self):
+        def race(path):
+            if '/runs?' in path:
+                self.review['state'] = 'DISMISSED'
+            return self.api(path)
+        result = acceptance.check(self.root, 2, race, trusted_root=self.trusted_root)
+        self.assertEqual(result['status'], 'waiting')
+        self.assertEqual(result['approvals'], [])
+        self.assertEqual(result['blockingReviews'], [])
+
+    def test_revoked_role_or_identity_during_ci_read_waits(self):
+        for change in ('revoked-role', 'changed-identity'):
+            with self.subTest(change=change):
+                self.role['role_name'] = 'maintain'
+                self.role['user']['id'] = 7
+                def race(path):
+                    if '/runs?' in path:
+                        if change == 'revoked-role':
+                            self.role['role_name'] = 'write'
+                        else:
+                            self.role['user']['id'] = 8
+                    return self.api(path)
+                result = acceptance.check(self.root, 2, race, trusted_root=self.trusted_root)
+                self.assertEqual(result['status'], 'waiting')
+                self.assertEqual(result['approvals'], [])
+
+    def test_new_qualified_blocking_review_during_ci_read_waits(self):
+        request = dict(self.review, id=21, state='CHANGES_REQUESTED',
+                       user={'login': 'reviewer', 'id': 8, 'type': 'User'})
+        def race(path):
+            if '/runs?' in path:
+                self.reviews.append(request)
+            if '/collaborators/reviewer/permission' in path:
+                return {'role_name': 'admin', 'user': {'login': 'reviewer', 'id': 8}}
+            return self.api(path)
+        result = acceptance.check(self.root, 2, race, trusted_root=self.trusted_root)
+        self.assertEqual(result['status'], 'waiting')
+        self.assertEqual(len(result['approvals']), 1)
+        self.assertEqual(len(result['blockingReviews']), 1)
+        self.assertEqual(result['blockingReviews'][0]['reviewId'], 21)
+
+    def test_unchanged_approval_with_new_comment_remains_accepted(self):
+        def race(path):
+            if '/runs?' in path:
+                self.reviews.append(dict(self.review, id=21, state='COMMENTED'))
+            return self.api(path)
+        result = acceptance.check(self.root, 2, race, trusted_root=self.trusted_root)
+        self.assertEqual(result['status'], 'accepted')
+        self.assertEqual([r['reviewId'] for r in result['approvals']], [20])
+        self.assertEqual(result['blockingReviews'], [])
+        self.assertEqual(sum('/reviews?' in path for path in self.calls), 2)
+        self.assertEqual(sum('/collaborators/' in path for path in self.calls), 2)
+
     def test_current_human_maintain_approval(self):
         result = self.checked()
         self.assertEqual(result['status'], 'accepted')

@@ -33,10 +33,11 @@ DeepSeek automatic delegation is paused through2026-12-31.
 - GitHub main now requires one current human approval and canonical Component
   checks, including administrators, without force push/deletion or review bypass.
 
-Status:39admission and20acceptance/release regression tests pass; independent
-boundary review pending. GitHub main protection was applied and authenticated
-readback verified. CODEOWNERS is local until human-reviewed merge. Next: two
-independent reviews, coordinator verification and local delivery. Review
+Status:39admission and25acceptance/release regression tests pass;
+initial independent reviews complete. First correction batch completes final
+PR open/ready and effective human reviews/roles with race regression cases. GitHub main protection was applied and authenticated
+readback verified. CODEOWNERS is local until human-reviewed merge. Next: targeted
+independent correction review, coordinator verification and local delivery. Review
 ledger/limits are owned in sibling Zero's CURRENT; no parallel review plan here.
 No live AI, public student acceptance, physical Windows/Linux or novice trial is
 claimed. Previous publication authority completed; immutable releases remain intact.
