@@ -33,9 +33,12 @@ class PublicTests(unittest.TestCase):
         self.git('add', '.')
         self.git('-c', 'user.name=Fixture', '-c', 'user.email=fixture@example.invalid', '-c', 'commit.gpgsign=false', 'commit', '-qm', 'fixture')
         self.sha = self.git('rev-parse', 'HEAD').strip()
+        self.main_sha = self.sha
+        self.trusted_root = self.root.parent / 'trusted-main'
+        subprocess.check_call(['git', 'clone', '-ql', str(self.root), str(self.trusted_root)])
         self.base = acceptance.BASE
         self.review = {'id': 20, 'user': {'login': 'maintainer', 'id': 7, 'type': 'User'}, 'state': 'APPROVED', 'commit_id': self.sha, 'submitted_at': '2026-10-09T00:00:00Z'}
-        self.pr = {'base': {'repo': {'full_name': acceptance.REPOSITORY}}, 'head': {'sha': self.sha}, 'user': {'login': 'contributor'}, 'state': 'open', 'draft': False}
+        self.pr = {'base': {'ref': 'main', 'repo': {'full_name': acceptance.REPOSITORY}}, 'head': {'sha': self.sha}, 'user': {'login': 'contributor'}, 'state': 'open', 'draft': False}
         self.run = {'id': 30, 'workflow_id': 10, 'head_sha': self.sha, 'event': 'pull_request', 'pull_requests': [{'number': 2}], 'status': 'completed', 'conclusion': 'success'}
         self.reviews = [self.review]
         self.role = {'role_name': 'maintain', 'permission': 'write', 'user': {'login': 'maintainer', 'id': 7}}
@@ -50,6 +53,8 @@ class PublicTests(unittest.TestCase):
 
     def api(self, path):
         self.calls.append(path)
+        if path == self.base + '/branches/main':
+            return {'commit': {'sha': self.main_sha}}
         if path == self.base + '/pulls/2':
             return self.pr
         if '/reviews?' in path:
@@ -63,7 +68,114 @@ class PublicTests(unittest.TestCase):
         raise AssertionError('Unexpected API request: ' + path)
 
     def checked(self):
-        return acceptance.check(self.root, 2, self.api)
+        return acceptance.check(self.root, 2, self.api, trusted_root=self.trusted_root)
+
+    def commit_candidate(self):
+        self.git('add', '-A')
+        self.git('-c', 'user.name=Fixture', '-c', 'user.email=fixture@example.invalid',
+                 '-c', 'commit.gpgsign=false', 'commit', '-qm', 'candidate change')
+        self.sha = self.git('rev-parse', 'HEAD').strip()
+        self.pr['head']['sha'] = self.sha
+        self.review['commit_id'] = self.sha
+        self.run['head_sha'] = self.sha
+
+    def test_component_only_change_accepted_against_separate_main_checkout(self):
+        path = self.root / 'src/main/java/zero/community/HealthBar.java'
+        path.write_bytes(path.read_bytes() + b'\n// component-only candidate\n')
+        self.commit_candidate()
+        self.assertNotEqual(self.sha, self.main_sha)
+        result = self.checked()
+        self.assertEqual(result['status'], 'accepted')
+        self.assertEqual(result['trustedMainRevision'], self.main_sha)
+        self.assertEqual(result['executionPolicyChanges'], [])
+
+    def test_green_ci_cannot_accept_changed_execution_policy(self):
+        cases = {
+            'noop-workflow': ('.github/workflows/checks.yml', b'name: Component checks\non: pull_request\njobs:\n  check:\n    runs-on: ubuntu-24.04\n    steps:\n      - run: true\n'),
+            'skipped-build-pom': ('pom.xml', None),
+            'changed-script': ('scripts/admission.py', b'raise SystemExit(0)\n'),
+            'new-script': ('scripts/new-policy.py', b'raise SystemExit(0)\n'),
+            'deleted-script': ('scripts/test-admission.py', None),
+            'mode-change': ('mvnw', None),
+            'maven-config': ('.mvn/maven.config', b'-Dmaven.test.skip=true\n'),
+            'wrapper-config': ('.mvn/wrapper/maven-wrapper.properties', b'distributionUrl=changed\n'),
+            'windows-wrapper': ('mvnw.cmd', b'exit /b 0\n'),
+            'bootstrap-helper': ('scripts/check-github-acceptance.py', b'print("accepted")\n'),
+        }
+        for label, (name, data) in cases.items():
+            with self.subTest(policy=label):
+                self.git('reset', '--hard', self.main_sha)
+                self.git('clean', '-fd')
+                path = self.root / name
+                if label == 'skipped-build-pom':
+                    path.write_text(path.read_text().replace('<properties>', '<properties><maven.test.skip>true</maven.test.skip>'))
+                elif label == 'deleted-script':
+                    path.unlink()
+                elif label == 'mode-change':
+                    path.chmod(0o644 if path.stat().st_mode & 0o111 else 0o755)
+                else:
+                    path.parent.mkdir(parents=True, exist_ok=True)
+                    path.write_bytes(data)
+                self.commit_candidate()
+                result = self.checked()
+                self.assertEqual(result['status'], 'waiting')
+                self.assertFalse(result['communityReviewed'])
+                self.assertIn(name, result['executionPolicyChanges'])
+                self.assertTrue(any('separate owner policy review' in b for b in result['blockers']))
+                self.assertIsNotNone(result['checkRun'])
+
+    def test_non_main_pr_target_refused(self):
+        self.pr['base']['ref'] = 'release'
+        with self.assertRaisesRegex(ValueError, 'canonical main'):
+            self.checked()
+
+    def test_dirty_trusted_checkout_refused_before_api(self):
+        (self.trusted_root / 'scripts/admission.py').write_text('changed')
+        with self.assertRaisesRegex(ValueError, 'clean committed trusted main'):
+            self.checked()
+        self.assertEqual(self.calls, [])
+
+    def test_noncanonical_trusted_revision_refused(self):
+        self.main_sha = 'f' * 40
+        with self.assertRaisesRegex(ValueError, 'authenticated canonical main'):
+            self.checked()
+
+    def test_main_and_trusted_policy_drift_refused(self):
+        reads = 0
+        def main_race(path):
+            nonlocal reads
+            if path == self.base + '/branches/main':
+                reads += 1
+                if reads > 1:
+                    return {'commit': {'sha': 'd' * 40}}
+            return self.api(path)
+        with self.assertRaisesRegex(ValueError, 'main changed'):
+            acceptance.check(self.root, 2, main_race, trusted_root=self.trusted_root)
+        def policy_race(path):
+            if '/runs?' in path:
+                (self.trusted_root / 'scripts/admission.py').write_text('changed')
+            return self.api(path)
+        with self.assertRaisesRegex(ValueError, 'trusted main'):
+            acceptance.check(self.root, 2, policy_race, trusted_root=self.trusted_root)
+
+    def test_candidate_policy_drift_and_base_race_refused(self):
+        def policy_race(path):
+            if '/runs?' in path:
+                (self.root / 'scripts/admission.py').write_text('changed')
+            return self.api(path)
+        with self.assertRaisesRegex(ValueError, 'candidate'):
+            acceptance.check(self.root, 2, policy_race, trusted_root=self.trusted_root)
+        self.git('restore', 'scripts/admission.py')
+        reads = 0
+        def base_race(path):
+            nonlocal reads
+            if path == self.base + '/pulls/2':
+                reads += 1
+                if reads > 1:
+                    return dict(self.pr, base={'ref': 'release', 'repo': {'full_name': acceptance.REPOSITORY}})
+            return self.api(path)
+        with self.assertRaisesRegex(ValueError, 'Candidate changed'):
+            acceptance.check(self.root, 2, base_race, trusted_root=self.trusted_root)
 
     def test_current_human_maintain_approval(self):
         result = self.checked()
@@ -121,18 +233,18 @@ class PublicTests(unittest.TestCase):
             if '/collaborators/reviewer/permission' in path:
                 return {'role_name': role, 'user': {'login': 'reviewer', 'id': 8}}
             return self.api(path)
-        result = acceptance.check(self.root, 2, qualified)
+        result = acceptance.check(self.root, 2, qualified, trusted_root=self.trusted_root)
         self.assertEqual(result['status'], 'waiting')
         self.assertEqual(len(result['approvals']), 1)
         self.assertEqual(len(result['blockingReviews']), 1)
         request['commit_id'] = 'f' * 40
-        self.assertEqual(acceptance.check(self.root, 2, qualified)['status'], 'accepted')
+        self.assertEqual(acceptance.check(self.root, 2, qualified, trusted_root=self.trusted_root)['status'], 'accepted')
         request['commit_id'] = self.sha
         role = 'write'
-        self.assertEqual(acceptance.check(self.root, 2, qualified)['status'], 'accepted')
+        self.assertEqual(acceptance.check(self.root, 2, qualified, trusted_root=self.trusted_root)['status'], 'accepted')
         role = 'maintain'
         request['state'] = 'DISMISSED'
-        self.assertEqual(acceptance.check(self.root, 2, qualified)['status'], 'accepted')
+        self.assertEqual(acceptance.check(self.root, 2, qualified, trusted_root=self.trusted_root)['status'], 'accepted')
 
     def test_review_pagination(self):
         self.reviews = [dict(self.review, id=i, state='COMMENTED') for i in range(100)]
@@ -140,7 +252,7 @@ class PublicTests(unittest.TestCase):
             if '/reviews?' in path and 'page=2' in path:
                 return [self.review]
             return self.api(path)
-        self.assertEqual(acceptance.check(self.root, 2, paginated)['status'], 'accepted')
+        self.assertEqual(acceptance.check(self.root, 2, paginated, trusted_root=self.trusted_root)['status'], 'accepted')
 
     def test_head_race_and_wrong_repository_refused(self):
         reads = 0
@@ -152,7 +264,7 @@ class PublicTests(unittest.TestCase):
                     return dict(self.pr, head={'sha': 'c' * 40})
             return self.api(path)
         with self.assertRaisesRegex(ValueError, 'changed'):
-            acceptance.check(self.root, 2, racing)
+            acceptance.check(self.root, 2, racing, trusted_root=self.trusted_root)
         self.pr['base']['repo']['full_name'] = 'contributor/zero-community'
         with self.assertRaisesRegex(ValueError, 'mismatch'):
             self.checked()

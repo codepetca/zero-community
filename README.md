@@ -123,16 +123,24 @@ claims that uploads exist or accepts a contribution. After intentional owner
 publication, verified GitHub readback supplies the published URLs to Zero's
 single generated public manifest. No publisher or CI write access is added here.
 
-Run the trusted owner-side acceptance helper from maintained source, **never from
-a contribution PR checkout**:
+Run the owner-side acceptance helper from a **clean checkout at authenticated
+canonical GitHub `main`**, pointing it at a separate clean contribution checkout:
 
 ```sh
-python3 scripts/check-github-acceptance.py --root /path/to/clean/candidate --pull-request 2
+python3 /path/to/clean/canonical-main/scripts/check-github-acceptance.py \
+  --root /path/to/clean/candidate --pull-request 2
 ```
 
 It uses existing `gh` authentication only for read-only canonical GitHub API calls.
 It requires a current-head independent human approval by an existing maintain/admin
-user and successful canonical Component checks for that PR revision. Stale,
+user and successful canonical Component checks for that PR revision targeting
+canonical `main`. It authenticates the helper checkout SHA against GitHub `main`
+and compares the complete execution policy (scripts, workflows, Maven config,
+wrappers and POM), including Git blob hashes, modes and path sets. Policy changes
+wait for a separate owner policy review and merge even when CI is green; a PR
+changing the helper cannot establish acceptance through its own code. Human
+usefulness/readability review is still required. Main, checkout and PR changes
+during the check invalidate it. Stale,
 dismissed, superseded, self, bot, unknown-role or unavailable evidence waits. No
 JSON receipt establishes authority; the helper cannot approve, merge or publish.
 An owner-authored initial release does not acquire independent community acceptance.

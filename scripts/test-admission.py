@@ -253,6 +253,70 @@ class AdmissionTests(unittest.TestCase):
         self.assertFalse(modeled["communityReviewed"])
         self.assertFalse(modeled["publishAllowed"])
 
+    def ai_cli(self):
+        return subprocess.run([sys.executable, str(ROOT / 'scripts/admission.py'),
+                               'ai-request', '--root', str(self.root)], capture_output=True)
+
+    def test_ai_request_rejects_formatted_overflow_despite_compact_fit(self):
+        request = admission.ai_request(self.root)
+        size = len(admission.canonical(request))
+        path = self.root / 'docs/HealthBar.md'
+        path.write_bytes(path.read_bytes() + b'x' * (64000 - size))
+        request = admission.ai_request(self.root)
+        self.assertEqual(len(admission.canonical(request)), 64000)
+        self.assertGreater(len((json.dumps(request, indent=2, ensure_ascii=False) + '\n').encode('utf-8')), 64000)
+        result = self.ai_cli()
+        self.assertEqual(result.returncode, 1)
+        self.assertEqual(result.stdout, b'')
+        self.assertIn(b'AI input budget exceeded', result.stderr)
+
+    def test_ai_exact_utf8_output_bound_includes_final_newline(self):
+        path = self.root / 'docs/HealthBar.md'
+        path.write_bytes(path.read_bytes() + 'é'.encode('utf-8'))
+        request = admission.ai_request(self.root)
+        payload = admission.serialize_ai_request(request)
+        path.write_bytes(path.read_bytes() + b'x' * (64000 - len(payload)))
+        expected = admission.serialize_ai_request(admission.ai_request(self.root))
+        self.assertEqual(len(expected), 64000)
+        self.assertTrue(expected.endswith(b'\n'))
+        self.assertIn('é'.encode('utf-8'), expected)
+        result = self.ai_cli()
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(result.stdout, expected)
+        path.write_bytes(path.read_bytes() + b'x')
+        result = self.ai_cli()
+        self.assertEqual(result.returncode, 1)
+        self.assertEqual(result.stdout, b'')
+        self.assertIn(b'AI input budget exceeded', result.stderr)
+
+    def test_schema_one_rejects_boolean_float_string_and_missing(self):
+        source = admission.inspect(self.root)
+        metadata = json.loads((self.root / admission.META).read_text())
+        for schema in (True, False, 1.0, '1', None, 2):
+            with self.subTest(schema=repr(schema)):
+                response = {'schema': schema, 'sourceDigest': source['sourceDigest'], 'advisory': True, 'findings': []}
+                receipt = {'schema': schema, 'sourceDigest': source['sourceDigest'], 'checks': [], 'provenance': {}}
+                with self.assertRaises(admission.AdmissionError):
+                    admission.validate_ai(response, source)
+                with self.assertRaises(admission.AdmissionError):
+                    admission.validate_receipt(receipt, source['sourceDigest'])
+                with self.assertRaises(admission.AdmissionError):
+                    admission.declarations(dict(metadata, schema=schema))
+        with self.assertRaises(admission.AdmissionError):
+            admission.declarations({k: v for k, v in metadata.items() if k != 'schema'})
+
+    def test_packet_schema_boolean_and_float_rejected(self):
+        packet = self.packet()
+        for schema in (True, 1.0):
+            with self.subTest(schema=repr(schema)):
+                def change(contents):
+                    manifest = json.loads(contents['packet.json'])
+                    manifest['schema'] = schema
+                    contents['packet.json'] = json.dumps(manifest).encode('utf-8')
+                self.mutate_zip(packet, change)
+                with self.assertRaises(admission.AdmissionError):
+                    admission.validate_packet(packet)
+
     def test_ai_response_has_no_acceptance_authority(self):
         source = admission.inspect(self.root)
         response = {"schema": 1, "sourceDigest": source["sourceDigest"], "advisory": True, "findings": []}
