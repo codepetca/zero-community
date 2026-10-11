@@ -73,7 +73,7 @@ class AdmissionTests(unittest.TestCase):
     def test_mit_packet_preserves_canonical_license_and_hash(self):
         source = admission.inspect(self.root)
         expected = (ROOT / "LICENSE").read_bytes()
-        self.assertEqual(len(source["files"]), 8)
+        self.assertEqual(len(source["files"]), 13)
         self.assertIn({"path": "LICENSE", "sha256": admission.digest(expected)}, source["files"])
         with zipfile.ZipFile(self.packet()) as archive:
             self.assertEqual(archive.read("LICENSE"), expected)
@@ -112,7 +112,7 @@ class AdmissionTests(unittest.TestCase):
             prepare.prepare(self.root, self.work / "stale-license", receipt)
 
     def test_historical_unlicensed_seven_file_packet_validates(self):
-        self.metadata(lambda m: m["components"][0].update(license="UNLICENSED"))
+        self.metadata(lambda m: (m.update(components=m["components"][:1]), m["components"][0].update(license="UNLICENSED")))
         (self.root / "LICENSE").unlink()
         source = admission.inspect(self.root)
         self.assertEqual(len(source["files"]), 7)
@@ -120,6 +120,26 @@ class AdmissionTests(unittest.TestCase):
         with zipfile.ZipFile(packet) as archive:
             self.assertNotIn("LICENSE", archive.namelist())
         self.assertEqual(admission.validate_packet(packet)["status"], "checked")
+
+    def test_two_components_bind_both_source_files(self):
+        source = admission.inspect(self.root)
+        path = self.root / "src/main/java/zero/community/SegmentedHealthBar.java"
+        path.write_bytes(path.read_bytes() + b"\n// changed alternative\n")
+        self.assertNotEqual(source["sourceDigest"], admission.inspect(self.root)["sourceDigest"])
+
+    def test_contributor_curation_and_recommendation_fields_rejected(self):
+        original = (self.root / admission.META).read_text()
+        for key in ("recommendation", "recommended", "curation", "corePromotion"):
+            for top in (True, False):
+                (self.root / admission.META).write_text(original)
+                self.metadata(lambda m: (m if top else m["components"][0]).update({key: True}))
+                with self.assertRaisesRegex(admission.AdmissionError, "authority"):
+                    admission.inspect(self.root)
+
+    def test_exact_component_version_availability(self):
+        self.metadata(lambda m: m["components"][1].update(versions=["0.1.2"]))
+        with self.assertRaisesRegex(admission.AdmissionError, "exact releases"):
+            admission.inspect(self.root)
 
     def test_missing_docs(self):
         (self.root / "docs/HealthBar.md").unlink()
@@ -204,7 +224,7 @@ class AdmissionTests(unittest.TestCase):
         self.assertFalse(forged["publishAllowed"])
 
     def test_trusted_policy_local_model_source_binding(self):
-        self.metadata(lambda m: m["components"][0].update(license="MIT", maintainer="maintainer"))
+        self.metadata(lambda m: [c.update(license="MIT", maintainer="maintainer") for c in m["components"]])
         report = admission.validate_packet(self.packet())
         policy = {"maintainers": ["maintainer"], "reviewers": ["reviewer"], "checkRunners": ["trusted-runner"], "verifiedChecks": [{"runner": "trusted-runner", "sourceDigest": report["sourceDigest"], "passedChecks": ["build", "behavior", "reuse", "compatibility"]}], "independentApprovals": [{"reviewer": "reviewer", "author": "contributor", "decision": "approve", "kind": "human-community-review", "sourceDigest": report["sourceDigest"]}]}
         modeled = admission.acceptance_model(report, policy)
@@ -224,7 +244,7 @@ class AdmissionTests(unittest.TestCase):
         self.assertFalse(modeled["publishAllowed"])
 
     def test_unlicensed_with_trusted_review_never_accepted(self):
-        self.metadata(lambda m: m["components"][0].update(license="UNLICENSED", maintainer="maintainer"))
+        self.metadata(lambda m: [c.update(license="UNLICENSED", maintainer="maintainer") for c in m["components"]])
         report = admission.validate_packet(self.packet())
         policy = {"maintainers": ["maintainer"], "reviewers": ["reviewer"], "checkRunners": ["trusted-runner"], "verifiedChecks": [{"runner": "trusted-runner", "sourceDigest": report["sourceDigest"], "passedChecks": ["build", "behavior", "reuse", "compatibility"]}], "independentApprovals": [{"reviewer": "reviewer", "author": "contributor", "decision": "approve", "kind": "human-community-review", "sourceDigest": report["sourceDigest"]}]}
         modeled = admission.acceptance_model(report, policy)

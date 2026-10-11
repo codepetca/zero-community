@@ -4,7 +4,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>school.zero.community</groupId>
   <artifactId>zero-community</artifactId>
-  <version>0.1.2</version>
+  <version>0.1.3</version>
   <name>Zero community components</name>
   <description>Ordinary JavaFX components with explicit updates.</description>
   <licenses><license><name>MIT License</name><url>https://opensource.org/license/mit</url><distribution>repo</distribution></license></licenses>

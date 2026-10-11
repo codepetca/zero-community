@@ -286,6 +286,9 @@ def main():
     (PROOF / 'settings.xml').write_text('<settings xmlns="http://maven.apache.org/SETTINGS/1.2.0"/>\n')
     metadata = json.loads((ROOT / 'catalog/components.json').read_text())
     metadata['library']['version'] = VERSIONS[-1]  # Historical fixture catalog, never public discovery.
+    metadata['components'] = [dict(metadata['components'][0])]
+    metadata['components'][0].pop('category', None)
+    metadata['components'][0].pop('versions', None)
     assert {item['id'] for item in metadata['components'][0]['examples']} == set(CHECKS)
     consumers = {kind: prepare_consumer(kind, zero_root) for kind in CHECKS}
     baseline_build, baseline_files = build_release('0.1.0')

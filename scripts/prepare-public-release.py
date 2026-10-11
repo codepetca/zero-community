@@ -31,15 +31,17 @@ def command(arguments, root, timeout=180):
     return result.stdout
 
 
-def committed_source(root):
+def source_inputs(root, local=False):
     root = Path(root).resolve()
-    if command(['git', 'status', '--porcelain', '--untracked-files=normal'], root).strip():
+    if not local and command(['git', 'status', '--porcelain', '--untracked-files=normal'], root).strip():
         raise ValueError('Release requires clean committed source; commit edits first')
     revision = command(['git', 'rev-parse', 'HEAD'], root).strip()
     if not re.fullmatch(r'[a-f0-9]{40}', revision):
         raise ValueError('Expected exact source commit SHA')
     source = admission.inspect(root)
     tracked = set(command(['git', 'ls-files', '-z'], root).split('\0')) - {''}
+    if local:
+        tracked |= {f['path'] for f in source['files']}
     if not {f['path'] for f in source['files']} <= tracked:
         raise ValueError('Owned release source must be committed')
     library = source['metadata']['library']
@@ -53,6 +55,10 @@ def committed_source(root):
     return revision, source, tracked
 
 
+def committed_source(root):
+    return source_inputs(root)
+
+
 def new_output(root, output):
     root, output = Path(root).resolve(), Path(os.path.abspath(output))
     if output.exists() or output.is_symlink() or any(p.is_symlink() for p in output.parents):
@@ -64,6 +70,7 @@ def new_output(root, output):
 
 def verify_artifacts(root, files, source):
     notice = (root / 'LICENSE').read_bytes()
+    classes = [c['className'].replace('.', '/') for c in source['metadata']['components']]
     for kind in ('jar', 'sources', 'javadoc'):
         with zipfile.ZipFile(files[kind]) as archive:
             names = archive.namelist()
@@ -72,12 +79,13 @@ def verify_artifacts(root, files, source):
             license_path = 'resources/LICENSE' if kind == 'javadoc' else 'META-INF/LICENSE'
             if archive.read(license_path) != notice:
                 raise ValueError('Canonical MIT notice missing or changed in ' + kind)
-            if kind == 'jar' and sorted(n for n in names if n.endswith('.class')) != ['zero/community/HealthBar.class']:
+            if kind == 'jar' and sorted(n for n in names if n.endswith('.class')) != sorted(name + '.class' for name in classes):
                 raise ValueError('Unexpected classes; library must not bundle Zero')
-            if kind == 'sources' and archive.read('zero/community/HealthBar.java') != (root / 'src/main/java/zero/community/HealthBar.java').read_bytes():
-                raise ValueError('Source JAR differs from source')
-            if kind == 'javadoc' and 'zero/community/HealthBar.html' not in names:
-                raise ValueError('HealthBar API JAR missing')
+            for name in classes:
+                if kind == 'sources' and archive.read(name + '.java') != (root / 'src/main/java' / (name + '.java')).read_bytes():
+                    raise ValueError('Source JAR differs from source: ' + name)
+                if kind == 'javadoc' and name + '.html' not in names:
+                    raise ValueError('Component API JAR missing: ' + name)
     if files['pom'].read_bytes() != (root / 'pom.xml').read_bytes():
         raise ValueError('Released POM differs from committed POM')
     version = source['metadata']['library']['version']
@@ -101,11 +109,31 @@ def consumer_checks(root, zero_root, work, files, version):
             import hashlib
             (repo / (path.name + '.' + algorithm)).write_text(hashlib.new(algorithm, path.read_bytes()).hexdigest() + '\n')
     result = []
-    for kind in ('adventure', 'study'):
+    kinds = ['adventure', 'study']
+    if any(c['name'] == 'SegmentedHealthBar' for c in admission.inspect(root)['metadata']['components']):
+        kinds += ['segmented-adventure', 'segmented-study']
+    for kind in kinds:
         dest = cycle.prepare_consumer(kind, zero_root)
         pom = dest / 'pom.xml'
         pom.write_text(pom.read_text().replace('<zero.community.version>0.1.0</zero.community.version>', f'<zero.community.version>{version}</zero.community.version>'))
-        check = cycle.HARNESS.replace('VERSION', version).replace('CHECKS', cycle.CHECKS[kind]).replace('KIND', kind).replace('PHASE', 'public-candidate').replace('boolean fixed = version.equals("0.1.1");', 'boolean fixed = true;')
+        segmented = kind.startswith('segmented-')
+        check = cycle.HARNESS.replace('VERSION', version).replace('CHECKS', cycle.CHECKS[kind.removeprefix('segmented-')]).replace('KIND', kind).replace('PHASE', 'public-candidate').replace('boolean fixed = version.equals("0.1.1");', 'boolean fixed = true;')
+        if segmented:
+            check = check.replace('HealthBar', 'SegmentedHealthBar')
+            check = check.replace('ProgressBar fill = (ProgressBar) view.getChildren().get(1);', '')
+            check = check.replace('fill.getProgress()', 'fraction(view, meter.getMaximum())')
+            check = check.replace('    static void require(boolean value, String message) {', """    static double fraction(VBox view, int maximum) {
+        javafx.scene.layout.HBox segments = (javafx.scene.layout.HBox) view.getChildren().get(1);
+        int count = segments.getChildren().size(), lower = 0;
+        double amount = 0;
+        for (int i = 0; i < count; i++) {
+            int upper = (int) ((long) (i + 1) * maximum / count);
+            amount += ((ProgressBar) segments.getChildren().get(i)).getProgress() * (upper - lower);
+            lower = upper;
+        }
+        return amount / maximum;
+    }
+    static void require(boolean value, String message) {""")
         (dest / 'src/main/java/CycleCheck.java').write_text(check)
         marker = f'CYCLE_OK {kind} public-candidate {version}'
         cycle.maven(dest, '-Dapp.mainClass=CycleCheck', 'clean', 'compile', 'javafx:run', marker=marker)
@@ -116,11 +144,11 @@ def consumer_checks(root, zero_root, work, files, version):
     return result
 
 
-def prepare(root, zero_root, output=None):
+def prepare(root, zero_root, output=None, local=False):
     root, zero_root = Path(root).resolve(), Path(zero_root).resolve()
-    revision, source, tracked = committed_source(root)
+    revision, source, tracked = source_inputs(root, local)
     version = source['metadata']['library']['version']
-    output = new_output(root, output or root / '.proof/public' / version)
+    output = new_output(root, output or root / ('.proof/local' if local else '.proof/public') / version)
     if not any((zero_root / path).is_file() for path in ('student-template/src/main/java/zero/SimpleApp.java', 'framework/src/main/java/zero/SimpleApp.java')):
         raise ValueError('Supply the sibling Zero source checkout for two-app verification')
     proof = root / '.proof'
@@ -152,15 +180,16 @@ def prepare(root, zero_root, output=None):
                  'pom': released_pom, 'sources': build / 'target' / f'zero-community-{version}-sources.jar',
                  'javadoc': build / 'target' / f'zero-community-{version}-javadoc.jar'}
         first = verify_artifacts(root, files, source)
-        tests = ET.parse(build / 'target/surefire-reports/TEST-zero.community.HealthBarTest.xml').getroot()
-        if tests.attrib.get('tests') != '3' or any(tests.attrib.get(key) != '0' for key in ('errors', 'failures', 'skipped')):
-            raise ValueError('All three HealthBar behavior checks must pass')
+        for component in source['metadata']['components']:
+            tests = ET.parse(build / ('target/surefire-reports/TEST-' + component['className'] + 'Test.xml')).getroot()
+            if int(tests.attrib.get('tests', '0')) < 3 or any(tests.attrib.get(key) != '0' for key in ('errors', 'failures', 'skipped')):
+                raise ValueError('At least three meaningful behavior checks must pass per component')
         command(arguments, build)
         artifacts = verify_artifacts(root, files, source)
         if first != artifacts:
             raise ValueError('Repeated artifact bytes differ; candidate is not reproducible')
         consumers = consumer_checks(root, zero_root, work, files, version)
-        end_revision, end_source, end_tracked = committed_source(root)
+        end_revision, end_source, end_tracked = source_inputs(root, local)
         if (end_revision, end_source['sourceDigest'], end_tracked) != (revision, source['sourceDigest'], tracked):
             raise ValueError('Source changed during release preparation')
         manifest = {'schemaVersion': 1, 'origin': 'public-release',
@@ -168,13 +197,13 @@ def prepare(root, zero_root, output=None):
                     'repositoryUrl': MAVEN_BASE, 'library': source['metadata']['library'],
                     'latest': version, 'components': source['metadata']['components'],
                     'releases': [{'version': version, 'sourceRevision': revision, 'sourceDigest': source['sourceDigest'],
-                                  'notes': 'First public MIT candidate; experimental HealthBar, unchanged explicit API.', 'artifacts': artifacts}]}
+                                  'notes': 'Experimental health bar alternatives; local preparation grants no recommendation or acceptance.', 'artifacts': artifacts}]}
         receipt = {'schema': 1, 'sourceDigest': source['sourceDigest'],
                    'checks': [{'id': name, 'status': 'passed', 'evidence': detail} for name, detail in (
-                       ('build-behavior', 'Two clean builds; three meaningful HealthBar JavaFX checks passed.'),
+                       ('build-behavior', 'Two clean builds; at least three meaningful JavaFX checks per declared component passed.'),
                        ('artifact-provenance', 'Reproducible four artifacts; exact source/POM/MIT notice/API and no bundled Zero.'),
-                       ('reuse-compatibility', 'Adventure and study consume the exact Maven JAR and exercise explicit updates and fractional fill.'))],
-                   'provenance': {'sourceRevision': revision, 'generator': 'prepare-public-release.py',
+                       ('reuse-compatibility', 'Both plain and segmented adventure/study apps consume the exact Maven JAR and exercise explicit updates and fractional fill.'))],
+                   'provenance': {'sourceRevision': revision, 'sourceState': 'working-tree' if local else 'committed', 'generator': 'prepare-public-release.py',
                                   'testedArtifact': {'kind': 'candidate-jar', 'version': version, 'sha256': artifacts['jar']['sha256'],
                                                      'sourceBinding': 'built-local-candidate', 'sourceDigest': source['sourceDigest']}},
                    'consumers': consumers, 'communityReviewed': False, 'publishAllowed': False,
@@ -187,7 +216,7 @@ def prepare(root, zero_root, output=None):
         (output / 'catalog.json').write_text(json.dumps(manifest, indent=2) + '\n')
         (output / 'checks.json').write_text(json.dumps(receipt, indent=2) + '\n')
         (output / 'SOURCE.json').write_text(json.dumps({'repository': REPOSITORY, 'sourceRevision': revision,
-                                                      'sourceDigest': source['sourceDigest'], 'files': source['files']}, indent=2) + '\n')
+                                                      'sourceDigest': source['sourceDigest'], 'sourceState': 'working-tree' if local else 'committed', 'files': source['files']}, indent=2) + '\n')
         (output / 'SHA256SUMS').write_text(''.join(f'{admission.digest(p.read_bytes())}  {p.name}\n' for p in sorted(output.iterdir()) if p.is_file()))
         return manifest
 
@@ -198,6 +227,7 @@ def main():
     parser.add_argument('--zero-root', type=Path)
     parser.add_argument('--verify-built', type=Path, help='Read-only inspection of already-built artifact contents (CI)')
     parser.add_argument('--output', type=Path)
+    parser.add_argument('--local-source', action='store_true', help='Local trusted working-tree verification only; does not qualify as a committed public candidate')
     args = parser.parse_args()
     try:
         if args.verify_built:
@@ -211,7 +241,7 @@ def main():
         else:
             if not args.zero_root:
                 parser.error('--zero-root required for actual release preparation')
-            print(json.dumps(prepare(args.root, args.zero_root, args.output), indent=2))
+            print(json.dumps(prepare(args.root, args.zero_root, args.output, args.local_source), indent=2))
         return 0
     except (ValueError, OSError, KeyError, TypeError, zipfile.BadZipFile, subprocess.TimeoutExpired) as error:
         print('Public candidate refused: ' + str(error), file=sys.stderr)

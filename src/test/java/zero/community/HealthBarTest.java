@@ -12,8 +12,8 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
 class HealthBarTest {
-    @BeforeAll static void startToolkit() { Platform.startup(() -> { }); }
-    @AfterAll static void stopToolkit() { Platform.exit(); }
+    @BeforeAll static void startToolkit() { try { Platform.startup(() -> { }); } catch (IllegalStateException alreadyStarted) { } }
+    // The shared JavaFX toolkit stays alive for other component test classes.
 
     private void onFx(Runnable check) throws Exception {
         FutureTask<Void> task = new FutureTask<>(check, null);

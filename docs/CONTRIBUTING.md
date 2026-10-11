@@ -138,3 +138,18 @@ AI secret, CI write permission, automatic merge or publisher are introduced.
 The earlier `acceptance_model` remains a local policy demonstration, not this
 live authenticated bridge. Initial experimental 0.1.2 publication under the
 owner's explicit authorization does not claim independent community acceptance.
+
+## Alternatives and catalog authority
+
+Use an optional `category` slug to group alternatives and optional `versions`
+containing distinct exact library versions that actually include the class.
+Include the current library version; omit `versions` for older metadata whose
+component is available in every listed release. Plain and segmented health bars
+share `health-bars`, while SegmentedHealthBar begins at 0.1.3. Every component
+declares its own API documentation, meaningful tests and two distinct app examples;
+all declared files participate in one canonical schema 1 digest.
+
+Contributor source metadata cannot declare recommendation or curation fields.
+Those belong to the separately owner-reviewed public catalog, tied to an exact
+component and library version. Packet receipts, CI and AI confer no recommendation,
+community acceptance, named maintainer appointment or Zero core promotion.

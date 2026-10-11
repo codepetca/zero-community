@@ -1,5 +1,36 @@
 # Current state — 2026-10-09
 
+## Alternatives — local0.1.3, review pending
+
+Owner agreed multiple alternatives, Health bars grouping and exact-version
+maintainer recommendations in Zero's reviewed public catalog. Current library
+0.1.3 adds SegmentedHealthBar with the same health/max/view API; plain HealthBar
+main source and all five historical source/POM snapshot files match base2f94f71.
+Public0.1.2 coordinates/assets remain immutable. Both components stay experimental,
+MIT, null maintainer. Category and availability are source metadata; contributor
+curation/recommendation/acceptance authority is rejected. No core promotion.
+
+Source digest388dd646ae188f30f91df6404f126d6857fe9f292926c658ba7418f5f3a76c34;
+localJAR SHA256f331fb4e444b0b6dbd3af6507b8e704009a9e0e52f4ba343cb30dd43e0d08b33.
+Two reproducible builds,6JavaFX tests,35admission and13release boundary tests,
+four actual plain/segmented consumer apps and six historical install/update/
+revert checks50.35s pass. Zero native Workshop current/old0.1.2/extracted portable
+checks and independent original/new/plugin packet validation pass. Evidence:
+.proof/local/0.1.3 and sibling Zero .verification/alternatives. Public/default
+preparation remains clean-committed/fixed-coordinate/no-overwrite; --local-source
+proof is explicitly working-tree provenance and does not authorize publication.
+
+Managed sibling feature worktree codex/component-alternatives from2f94f71. One
+writer alternatives_library GPT6.1Sol/high, about20min estimate; no recursive
+work, Git mutations or external actions. Coordinator verifies/integrates/reviews;
+weekly37%remaining at phase start reused, attributable tokens/elapsed overhead
+unknown; DeepSeek pause retained. No push, PR/merge, release, credentials, account
+changes, real upload or live AI. macOS synthetic native only; physical input,
+Windows/Linux, native editor picker and novices untested. Two bounded independent
+fixed-head reviews follow. Prior records below describe historical states.
+
+# Current state — 2026-10-09
+
 ## Public community candidate — local implementation
 
 Owner authorized the simple public component workflow, with existing canonical

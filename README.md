@@ -13,9 +13,10 @@ git clone https://github.com/codepetca/zero.git
 git clone https://github.com/codepetca/zero-community.git
 ```
 
-The remote hosts source and contribution PRs. Public release preparation is ready
-for the first MIT HealthBar version, 0.1.2. A prepared candidate is local until
-the owner publishes and independently verifies its GitHub Release assets.
+The remote hosts source and contribution PRs. Published MIT HealthBar 0.1.2
+remains unchanged. The current source prepares a local 0.1.3 library with plain
+and segmented health bar alternatives; it has not been published. A prepared
+candidate stays local until intentional owner publication and verified readback.
 The public catalog and Maven gateway belong to the Zero website integration.
 The Workshop integration is included in Zero's published 0.5.0 source; its
 separate component kit and Maven artifacts remain local. The source proof below
@@ -26,9 +27,9 @@ use without copying component source. Maven owns dependencies. It does not
 depend on or bundle Zero's framework. Both examples extend the existing
 `zero.SimpleApp`, supplied only by the disposable student starter in the proof.
 
-The public candidate is `school.zero.community:zero-community:0.1.2`, targeting
+The current local library is `school.zero.community:zero-community:0.1.3`, targeting
 Java 17 with pinned JavaFX controls 21.0.12. Read the [HealthBar API](docs/HealthBar.md)
-and the [component metadata](catalog/components.json). Source is readable under
+and [SegmentedHealthBar API](docs/SegmentedHealthBar.md), plus the [component metadata](catalog/components.json). Source is readable under
 `src/main/java`. [Adventure](examples/adventure/Main.java) and
 [study](examples/study/Main.java) show different app-owned rules using one component.
 Actual checks and limitations are recorded in [verification](docs/VERIFICATION.md).
@@ -91,10 +92,10 @@ publishing or AI credentials. It builds/tests with virtual-display JavaFX and
 validates a local contribution packet; passing it does not approve a component.
 See the verification record for observed runs and platform limitations.
 
-## Prepare the first public release
+## Prepare a public release
 
 Keep 0.1.0 and 0.1.1 as historical local fixtures; their source/POM snapshots and
-artifact bytes are preserved. Do not publish the known faulty 0.1.0. Public 0.1.2
+artifact bytes are preserved. Do not publish the known faulty 0.1.0. The published 0.1.2 release
 keeps the fixed HealthBar API and embeds the canonical MIT notice in its library,
 source and API JARs. One public version is sufficient; later real releases enable
 public Update/Revert.
@@ -106,11 +107,12 @@ python3 scripts/test-public-release.py
 python3 scripts/prepare-public-release.py --zero-root ../zero
 ```
 
-Preparation makes a new ignored `.proof/public/0.1.2/` directory; `--output` may
+Current 0.1.3 preparation makes a new ignored `.proof/public/0.1.3/` directory; `--output` may
 choose another new directory under `.proof/`. It refuses dirty source, symlinks,
 coordinate drift and overwrite. Two clean isolated Maven builds must produce the
 same four artifacts; source/POM/license/API bytes and class contents are checked.
-Adventure and study resolve the actual JAR through Maven and exercise behavior.
+All four plain/segmented adventure and study examples resolve the actual JAR
+through Maven and exercise behavior.
 Empty Maven settings and disposable caches avoid personal Maven configuration.
 `catalog.json`, `SOURCE.json`, `checks.json`, `SHA256SUMS` and `LICENSE` accompany
 the four flat artifacts. The generated catalog records exact source commit/digest,
@@ -132,3 +134,38 @@ user and successful canonical Component checks for that PR revision. Stale,
 dismissed, superseded, self, bot, unknown-role or unavailable evidence waits. No
 JSON receipt establishes authority; the helper cannot approve, merge or publish.
 An owner-authored initial release does not acquire independent community acceptance.
+
+## Local health bar alternatives (0.1.3)
+
+Both `HealthBar` and `SegmentedHealthBar` coexist in the `health-bars` category.
+The plain class keeps its existing API and source unchanged. The segmented class
+is available only in exact version 0.1.3, with the same constructors, `view`,
+`setHealth`, `getHealth` and `getMaximum` methods. Both remain experimental MIT
+components with no named maintainer. Contributor metadata can describe category
+and exact version availability, but cannot declare recommendation, curation,
+acceptance or core promotion. Recommendations belong to the separately reviewed
+owner catalog and must name an exact component and library version.
+
+From trusted maintainer source, prepare an uncommitted local working-tree proof:
+
+```sh
+python3 scripts/prepare-public-release.py --local-source --zero-root ../zero
+node ../zero/scripts/prepare-component-workshop.mjs "$PWD" --local
+node ../zero/scripts/run-component-workshop.mjs --check
+node ../zero/scripts/package-components.mjs "$PWD" --local-source
+```
+
+The first command creates a new `.proof/local/0.1.3/` directory and refuses
+overwrite, symlinks or fixed-coordinate drift. It performs two reproducible
+builds, checks both classes/source/API/MIT notice and all six JavaFX tests, and
+runs two actual Maven consumers. `SOURCE.json` marks `sourceState: working-tree`;
+its commit URL identifies the base, while its digest binds the exact declared
+working-tree files. This proof is not a clean committed public release candidate.
+The default command without `--local-source` retains the clean committed source
+guard and writes `.proof/public/<current-version>/`. Neither command publishes.
+
+The Workshop selects either alternative, builds all declared component source
+through fixed trusted javac options (never contributor POM/hooks), checks both
+components and exports a schema 1 packet binding both classes and their examples.
+Existing HealthBar-only 0.1.2 metadata and packets remain supported. Generated
+local artifacts and receipt data stay ignored.

@@ -68,6 +68,10 @@ def parse_json(data):
 def declarations(metadata):
     if not isinstance(metadata, dict) or metadata.get("schema") != 1 or not isinstance(metadata.get("library"), dict):
         raise AdmissionError("Expected source manifest schema 1 and library")
+    if set(metadata) - {"schema", "library", "components"}:
+        raise AdmissionError("Contributor metadata cannot declare curation or recommendation authority")
+    if set(metadata["library"]) - {"groupId", "artifactId", "version", "javaRelease", "javafxVersion"}:
+        raise AdmissionError("Contributor library cannot declare curation or recommendation authority")
     components = metadata.get("components")
     if not isinstance(components, list) or not components:
         raise AdmissionError("No declared components")
@@ -76,6 +80,14 @@ def declarations(metadata):
     for component in components:
         if not isinstance(component, dict):
             raise AdmissionError("Component must be an object")
+        if set(component) - {"id", "name", "className", "description", "api", "examples", "status", "license", "maintainer", "category", "versions"}:
+            raise AdmissionError("Contributor component cannot declare curation or recommendation authority")
+        if "category" in component and (not isinstance(component["category"], str) or not re.fullmatch(r"[a-z][a-z0-9-]*", component["category"])):
+            raise AdmissionError("Invalid component category")
+        if "versions" in component:
+            versions = component["versions"]
+            if not isinstance(versions, list) or not versions or any(not isinstance(v, str) or not re.fullmatch(r"[0-9]+\.[0-9]+\.[0-9]+", v) for v in versions) or len(set(versions)) != len(versions) or metadata["library"].get("version") not in versions:
+                raise AdmissionError("Component versions must be distinct exact releases including current library")
         if component.get("license") == "MIT":
             paths.add("LICENSE")
         name = component.get("name", "")
@@ -97,6 +109,8 @@ def declarations(metadata):
         for example in examples:
             if not isinstance(example, dict):
                 raise AdmissionError("Example must be an object")
+            if set(example) - {"id", "path", "description"}:
+                raise AdmissionError("Contributor example cannot declare curation or recommendation authority")
             eid = example.get("id", "")
             if not re.fullmatch(r"[a-z][a-z0-9-]*", eid) or eid in example_ids:
                 raise AdmissionError("Examples must have distinct app IDs")
