@@ -1,5 +1,16 @@
 # Delivery evidence index
 
+## Superseding branch-policy decision
+
+After approving [Zero PR20](https://github.com/codepetca/zero/pull/20) and
+[Community PR5](https://github.com/codepetca/zero-community/pull/5), the owner
+explicitly requested removal of GitHub branch protections. Both main protection
+records were deleted; authenticated GET returned404 `Branch not protected` for
+each repository and both ruleset lists were empty. Earlier protection receipts
+below are historical. The JSON snapshots do not enforce or restore settings.
+This decision changes GitHub enforcement only; Community acceptance-helper
+requirements, CI, reviewed runtime source and published release bytes are unchanged.
+
 ## Published 2026-10-10
 
 [Community 0.1.3](https://github.com/codepetca/zero-community/releases/tag/v0.1.3)
