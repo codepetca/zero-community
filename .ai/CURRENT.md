@@ -15,7 +15,8 @@ Owner accepted the AI audit fixes. Local branch `codex/ai-flow-hardening` starts
 `f6460f48`. Coordinator owns this snapshot/history/evidence, GitHub main rules and
 Git mutations; one Community worker owns admission/acceptance scripts, tests and
 contribution docs. No live AI provider, component API change, new release or
-credential/account change. Source PR/merge requires separate authorization.
+credential/account change. Owner now explicitly authorized source PR publication
+and merge, subject to GitHub current human review and canonical checks.
 
 Worker requested GPT-6.1-Sol/high for the bounded CI/authority boundary; effective
 configuration/tokens unknown. Weekly24%remaining at start is account-wide;
@@ -38,7 +39,8 @@ pass; both initial independent scopes and the targeted correction review complet
 with no unresolved blockers. Final decisions refresh PR readiness/reviews/roles;
 read-only snapshots do not guarantee atomicity against later changes.
 GitHub main protection is live and authenticated readback verified. Source and
-CODEOWNERS remain local; no push/PR/merge/new release. Next: separately authorized
-source PRs and real human review. Review ledger/limits live in sibling Zero CURRENT.
+CODEOWNERS are being published in reviewed source PRs. Next: final-head CI and
+independent human approval, then merge when GitHub permits. No protection bypass
+or new release/provider. Review ledger/limits live in sibling Zero CURRENT.
 No live AI, public student acceptance, physical Windows/Linux or novice trial is
 claimed. Previous publication authority completed; immutable releases remain intact.
