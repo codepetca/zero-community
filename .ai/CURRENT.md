@@ -39,7 +39,9 @@ pass; both initial independent scopes and the targeted correction review complet
 with no unresolved blockers. Final decisions refresh PR readiness/reviews/roles;
 read-only snapshots do not guarantee atomicity against later changes.
 GitHub main protection is live and authenticated readback verified. Source and
-CODEOWNERS are being published in reviewed source PRs. Next: final-head CI and
+CODEOWNERS are published in [Community PR5](https://github.com/codepetca/zero-community/pull/5),
+with [Zero PR20](https://github.com/codepetca/zero/pull/20) as the companion.
+Recover actual open/merged status from GitHub. Next: final-head CI and
 independent human approval, then merge when GitHub permits. No protection bypass
 or new release/provider. Review ledger/limits live in sibling Zero CURRENT.
 No live AI, public student acceptance, physical Windows/Linux or novice trial is
