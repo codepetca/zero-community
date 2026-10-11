@@ -13,13 +13,15 @@ git clone https://github.com/codepetca/zero.git
 git clone https://github.com/codepetca/zero-community.git
 ```
 
-The remote hosts source and contribution PRs. Published MIT HealthBar 0.1.2
-remains unchanged. The current source prepares a local 0.1.3 library with plain
-and segmented health bar alternatives; it has not been published. A prepared
-candidate stays local until intentional owner publication and verified readback.
+The remote hosts source and contribution PRs. [Zero Community 0.1.3](https://github.com/codepetca/zero-community/releases/tag/v0.1.3)
+publishes experimental MIT plain and segmented health bar alternatives, readable
+source/API artifacts and the portable Component Workshop. All nine public assets
+were downloaded without authentication and matched the source-bound candidate.
+Published 0.1.2 remains unchanged. Future candidates stay local until intentional
+owner publication and verified readback.
 The public catalog and Maven gateway belong to the Zero website integration.
 The Workshop integration is included in Zero's published 0.5.0 source; its
-separate component kit and Maven artifacts remain local. The source proof below
+portable Workshop and Maven artifacts are available in the Community release. The source proof below
 can be run independently of that editor integration.
 
 This separate Maven library contains ordinary JavaFX components students can
@@ -27,7 +29,7 @@ use without copying component source. Maven owns dependencies. It does not
 depend on or bundle Zero's framework. Both examples extend the existing
 `zero.SimpleApp`, supplied only by the disposable student starter in the proof.
 
-The current local library is `school.zero.community:zero-community:0.1.3`, targeting
+The current library is `school.zero.community:zero-community:0.1.3`, targeting
 Java 17 with pinned JavaFX controls 21.0.12. Read the [HealthBar API](docs/HealthBar.md)
 and [SegmentedHealthBar API](docs/SegmentedHealthBar.md), plus the [component metadata](catalog/components.json). Source is readable under
 `src/main/java`. [Adventure](examples/adventure/Main.java) and
@@ -135,7 +137,7 @@ dismissed, superseded, self, bot, unknown-role or unavailable evidence waits. No
 JSON receipt establishes authority; the helper cannot approve, merge or publish.
 An owner-authored initial release does not acquire independent community acceptance.
 
-## Local health bar alternatives (0.1.3)
+## Health bar alternatives (0.1.3)
 
 Both `HealthBar` and `SegmentedHealthBar` coexist in the `health-bars` category.
 The plain class keeps its existing API and source unchanged. The segmented class

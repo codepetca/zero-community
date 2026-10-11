@@ -1,3 +1,20 @@
+# Public 0.1.3 — 2026-10-10
+
+Owner authorized PR/merge/publication. PR3 merged at7d4fa181d07f320cc4a305f60636e81aab9a9bcb;
+Component checks passed. Tag v0.1.3 targets that exact merged source. Two reproducible
+builds, six behavior checks and four actual consumer apps pass. Nine draft downloads
+and all nine unauthenticated public downloads match the candidate sizes/SHA256.
+Portable Workshop binds reviewed Zero4e2eb8d and Community7d4fa18;81members,243011bytes,
+SHA256da507795c4e935e1fced1230ed32ba8f35eaf85e868328cf5b086061af70fa50.
+SourceDigest388dd646ae188f30f91df6404f126d6857fe9f292926c658ba7418f5f3a76c34.
+Both components remain experimental MIT/null maintainer; no independent human
+community acceptance/core promotion is claimed. Existing0.1.2 assets retained.
+Zero website promotion/release proceeds separately. Source/publisher reviews reused;
+publication-doc delta independently checked with the owner catalog promotion.
+macOS synthetic checks and CI Linux virtual display do not prove physical editor
+setup/input, Windows/Linux classroom setup or novice usability. Evidence retained
+in Zero .verification/publication-2026-10-10; no account/credential changes.
+
 # Current state — 2026-10-09
 
 ## Alternatives — local0.1.3, review pending
