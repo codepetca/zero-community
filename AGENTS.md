@@ -2,6 +2,8 @@
 
 Read [.ai/CURRENT.md](.ai/CURRENT.md) and [README.md](README.md) before edits.
 This is an ordinary Java 17 / JavaFX Maven library, independent of Zero core.
+Keep CURRENT a short operative snapshot; archived phase permissions are historical.
+Record compact delivery/review evidence in docs/EVIDENCE.md, with bulky logs ignored.
 Keep explicit object updates and the API readable. One writer per component.
 Pin dependencies, preserve reproducible release fixtures, and exclude builds.
 Local implementation does not authorize pushes, publication, account changes,

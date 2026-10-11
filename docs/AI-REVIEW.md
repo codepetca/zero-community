@@ -21,8 +21,11 @@ The returned `responseSchema` is JSON Schema with no additional properties:
 schema 1, exact source digest, `advisory: true`, and up to 12 findings containing an
 owned `path`, `severity` (`info`, `warning`, `error`) and a nonempty `message` of at
 most 2,000 characters. Budget: 64,000 request bytes, 16,000 response bytes, 12
-findings and at most one provider call. External execution is deferred; a future
-provider must enforce budgets outside the untrusted checkout and must not give
+findings and at most one provider call. The request is serialized once as formatted
+UTF-8 JSON, including its final newline; that exact emitted byte sequence must fit
+the input budget. Compact JSON size cannot substitute for the outbound size.
+Schema 1 must be the JSON integer `1`; booleans, floats and strings are rejected.
+External execution is deferred; a future provider must enforce budgets outside the untrusted checkout and must not give
 the model tools or repository credentials.
 
 Validate a separately saved response against current source:

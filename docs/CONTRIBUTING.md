@@ -53,6 +53,9 @@ packet manifest and check receipt. It excludes credentials, environment files,
 caches, targets and arbitrary tree contents. Symlinks, traversal, duplicate entries,
 non-owned files and oversized inputs are refused.
 
+Schema fields must be the JSON integer `1`; booleans, floats and strings fail
+source, packet, receipt and AI validation.
+
 Schema 1 `packet.json` carries `sourceDigest`, `files` records (`path`, `sha256`),
 the exact source `metadata`, POM-derived `dependencies`, declared `checks` and
 `provenance`. The source digest is SHA256 of UTF-8 canonical JSON for the sorted
@@ -118,21 +121,38 @@ a contributor's authored status and AI feedback never accept it.
 
 The maintained `scripts/check-github-acceptance.py` is an owner-side read-only
 bridge to GitHub's authenticated reviews and repository roles. Run the helper
-from trusted maintained source, pointing `--root` at a clean candidate checkout
-and `--pull-request` at its canonical PR number. It fetches all review pages,
+from a clean owner checkout at the authenticated canonical GitHub `main` SHA,
+pointing `--root` at a separate clean candidate checkout and `--pull-request` at
+its canonical PR number. The helper authenticates its own checkout revision using
+the read-only GitHub branch API; a dirty, stale or noncanonical helper checkout
+fails closed. The PR must target canonical `main`. It fetches all review pages,
 uses the effective decision for each reviewer, and requires an independent
 `APPROVED` review on the exact current head. `role_name` must be `maintain` or
 `admin`; the legacy `permission: write` is insufficient. The reviewer must be a
 User account distinct from the PR author, with matching role API identity.
 Canonical Component checks must pass for the same head and PR, and a newer failed
-or incomplete run supersedes an older success. Re-reading the head/digest catches
-candidate changes during the check. Unavailable role/review/CI evidence waits.
+or incomplete run supersedes an older success. Before relying on CI, the helper
+compares every tracked path, Git mode, object type and blob hash under `scripts/`,
+`.github/workflows/` and `.mvn/`, plus `mvnw`, `mvnw.cmd` and `pom.xml`, against
+that trusted `main` checkout. Changed, added, removed or mode-changed policy files
+keep the contribution waiting even with green CI and a qualified human approval.
+Policy changes require a separate owner policy review and merge; component
+acceptance can only follow against the resulting authenticated `main` policy.
+A PR changing this helper cannot use its own changed code to acquire acceptance,
+including the initial hardening PR. This check never executes candidate scripts.
+Re-reading canonical main, both clean checkout revisions, policy trees and the
+PR head/base/digest catches changes during the check. After reading CI, the helper
+refreshes effective reviews and qualified role identities and checks that the PR
+is still open and ready for review. Reported decisions use this final readback.
+These bounded read-only API calls provide a snapshot, not an atomic guarantee
+against later changes. Unavailable role/review/CI evidence waits.
 A current-head effective changes request by another qualified maintainer blocks
 acceptance even when an approval exists; stale/unqualified requests are not authority.
 The owner is responsible for human review; automation must not post approvals.
 
-The helper reports `accepted` only for authenticated maintainer review plus CI;
-separate release artifact checks and an intentional owner publication are still
+The helper reports `accepted` only for authenticated maintainer review plus CI
+with unchanged execution policy. Human usefulness/readability review remains
+required. Separate release artifact checks and an intentional owner publication are still
 required. `publishAllowed` always remains false. No flags, local JSON authority,
 AI secret, CI write permission, automatic merge or publisher are introduced.
 The earlier `acceptance_model` remains a local policy demonstration, not this
@@ -153,3 +173,14 @@ Contributor source metadata cannot declare recommendation or curation fields.
 Those belong to the separately owner-reviewed public catalog, tied to an exact
 component and library version. Packet receipts, CI and AI confer no recommendation,
 community acceptance, named maintainer appointment or Zero core promotion.
+
+## Required GitHub merge gate
+
+Canonical main requires an up-to-date PR, one current human approval, resolved
+review conversations and the GitHub Actions `check` result. Stale approvals are
+dismissed and the latest push must be approved by someone else. Rules apply to
+administrators without review bypass, force push or branch deletion. Code owners
+are existing human maintainers; AI feedback cannot supply a GitHub human approval.
+The owner-side acceptance helper is still a separate read-only check, not an
+automatic merge or publication service. Policy-changing PRs use human policy
+review; component acceptance follows only against authenticated main policy.
